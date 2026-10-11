@@ -4,69 +4,68 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var statusTextView: TextView
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var mediaAdapter: MediaAdapter
+    private val mediaRepository by lazy { MediaRepository(this) }
 
     private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions.entries.all { it.value }
-        if (granted) {
-            Toast.makeText(this, "Permissions Granted! Scanning Gallery...", Toast.LENGTH_SHORT).show()
-            loadGalleryImages()
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            loadMedia()
         } else {
-            Toast.makeText(this, "Permissions Denied. App needs storage access.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Media permission is required to view gallery", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        statusTextView = TextView(this).apply {
-            text = "SmartGallery AI\nGallery Scanner & Manager\n\nChecking Permissions..."
-            textSize = 18f
-            setPadding(50, 100, 50, 50)
-            setContentView(this)
-        }
+        setContentView(R.layout.activity_main)
 
-        checkAndRequestGalleryPermissions()
+        recyclerView = findViewById(R.id.recyclerViewMedia)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+
+        mediaAdapter = MediaAdapter(emptyList()) { item ->
+            Toast.makeText(this, item.fileName, Toast.LENGTH_SHORT).show()
+        }
+        recyclerView.adapter = mediaAdapter
+
+        checkAndRequestPermission()
     }
 
-    private fun checkAndRequestGalleryPermissions() {
-        val permissionsList = mutableListOf<String>()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            permissionsList.add(Manifest.permission.READ_MEDIA_IMAGES)
-            permissionsList.add(Manifest.permission.READ_MEDIA_VIDEO)
-            permissionsList.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionsList.add(Manifest.permission.READ_MEDIA_IMAGES)
-            permissionsList.add(Manifest.permission.READ_MEDIA_VIDEO)
+    private fun checkAndRequestPermission() {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
         } else {
-            permissionsList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            Manifest.permission.READ_EXTERNAL_STORAGE
         }
 
-        val notGranted = permissionsList.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (notGranted.isNotEmpty()) {
-            requestPermissionLauncher.launch(notGranted.toTypedArray())
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            loadMedia()
         } else {
-            Toast.makeText(this, "Gallery Permission Already Granted", Toast.LENGTH_SHORT).show()
-            loadGalleryImages()
+            requestPermissionLauncher.launch(permission)
         }
     }
 
-    private fun loadGalleryImages() {
-        val mediaList = MediaRepository.loadGalleryMedia(this)
-        statusTextView.text = "SmartGallery AI\n\nTotal Photos Found: ${mediaList.size}\n\nLocal Privacy Mode Active (No Cloud Upload)"
+    private fun loadMedia() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val items = mediaRepository.getAllMedia()
+            withContext(Dispatchers.Main) {
+                mediaAdapter.updateData(items)
+            }
+        }
     }
 }
