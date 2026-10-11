@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -11,12 +12,15 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var statusTextView: TextView
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.entries.all { it.value }
         if (granted) {
             Toast.makeText(this, "Permissions Granted! Scanning Gallery...", Toast.LENGTH_SHORT).show()
+            loadGalleryImages()
         } else {
             Toast.makeText(this, "Permissions Denied. App needs storage access.", Toast.LENGTH_LONG).show()
         }
@@ -25,10 +29,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Simple text view or layout for SmartGallery AI
-        val android.widget.TextView(this).apply {
+        statusTextView = TextView(this).apply {
             text = "SmartGallery AI\nGallery Scanner & Manager\n\nChecking Permissions..."
-            textSize = 20f
+            textSize = 18f
             setPadding(50, 100, 50, 50)
             setContentView(this)
         }
@@ -58,6 +61,12 @@ class MainActivity : AppCompatActivity() {
             requestPermissionLauncher.launch(notGranted.toTypedArray())
         } else {
             Toast.makeText(this, "Gallery Permission Already Granted", Toast.LENGTH_SHORT).show()
+            loadGalleryImages()
         }
+    }
+
+    private fun loadGalleryImages() {
+        val mediaList = MediaRepository.loadGalleryMedia(this)
+        statusTextView.text = "SmartGallery AI\n\nTotal Photos Found: ${mediaList.size}\n\nLocal Privacy Mode Active (No Cloud Upload)"
     }
 }
