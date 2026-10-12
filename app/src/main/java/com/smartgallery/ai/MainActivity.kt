@@ -3,12 +3,16 @@ package com.smartgallery.ai
 import android.Manifest
 import android.content.ContentUris
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.MediaController
 import android.widget.Toast
+import android.widget.VideoView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,7 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var mediaAdapter: MediaAdapter
     private lateinit var repository: MediaRepository
-    private lateinit var btnDeleteWhatsApp: Button
+    private var btnDeleteWhatsApp: Button? = null
 
     private val permissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -35,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         if (allGranted) {
             loadMediaData()
         } else {
-            Toast.makeText(this, "Permissions deny hone par photos aur delete feature kaam nahi karega!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Permissions deny hone par media load nahi hoga!", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -48,35 +52,62 @@ class MainActivity : AppCompatActivity() {
         btnDeleteWhatsApp = findViewById(R.id.btnDeleteWhatsApp)
 
         recyclerView.layoutManager = GridLayoutManager(this, 3)
-        
-        // Photo click par Full Screen mein kholna
+
         mediaAdapter = MediaAdapter(emptyList()) { item ->
-            showFullScreenImage(item.uri)
+            if (item.isVideo) {
+                openFullScreenVideo(item.uri)
+            } else {
+                openFullScreenImage(item.uri)
+            }
         }
         recyclerView.adapter = mediaAdapter
 
-        btnDeleteWhatsApp.setOnClickListener {
-            confirmAndDeleteWhatsAppMedia()
+        btnDeleteWhatsApp?.setOnClickListener {
+            confirmAndCleanAllMedia()
         }
 
         checkAndRequestAllPermissions()
     }
 
-    private fun showFullScreenImage(imageUri: android.net.Uri) {
+    private fun openFullScreenImage(imageUri: Uri) {
         val builder = AlertDialog.Builder(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
-        imageView.layoutParams = android.view.ViewGroup.LayoutParams(
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-            android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        imageView.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
         imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-        
+
         Glide.with(this).load(imageUri).into(imageView)
-        
+
         builder.setView(imageView)
         val dialog = builder.create()
-        imageView.setOnClickListener { dialog.dismiss() } // Click karne par image close ho jayegi
+        imageView.setOnClickListener { dialog.dismiss() }
         dialog.show()
+    }
+
+    private fun openFullScreenVideo(videoUri: Uri) {
+        val builder = AlertDialog.Builder(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val videoView = VideoView(this)
+        videoView.layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+
+        val mediaController = MediaController(this)
+        mediaController.setAnchorView(videoView)
+        videoView.setMediaController(mediaController)
+        videoView.setVideoURI(videoUri)
+
+        builder.setView(videoView)
+        val dialog = builder.create()
+
+        dialog.setOnDismissListener {
+            videoView.stopPlayback()
+        }
+
+        dialog.show()
+        videoView.start()
     }
 
     private fun checkAndRequestAllPermissions() {
@@ -114,29 +145,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun confirmAndDeleteWhatsAppMedia() {
+    private fun confirmAndCleanAllMedia() {
         AlertDialog.Builder(this)
-            .setTitle("Clean WhatsApp Media")
-            .setMessage("Kya aap WhatsApp ke saare Screenshots, Photos aur Videos permanently delete karna chahte hain?")
+            .setTitle("Smart Clean Engine")
+            .setMessage("Kya aap WhatsApp Media, Screenshots aur Unwanted Data saaf karna chahte hain?")
             .setPositiveButton("Delete All") { _, _ ->
-                deleteWhatsAppMediaAndScreenshots()
+                executeDeepClean()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun deleteWhatsAppMediaAndScreenshots() {
+    private fun executeDeepClean() {
         CoroutineScope(Dispatchers.IO).launch {
             var totalDeleted = 0
 
-            // 1. Delete WhatsApp Images & Screenshots
             totalDeleted += deleteFromUri(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 "${MediaStore.Images.Media.DATA} LIKE ? OR ${MediaStore.Images.Media.DATA} LIKE ?",
                 arrayOf("%WhatsApp%", "%Screenshot%")
             )
 
-            // 2. Delete WhatsApp Videos
             totalDeleted += deleteFromUri(
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                 "${MediaStore.Video.Media.DATA} LIKE ?",
@@ -144,13 +173,13 @@ class MainActivity : AppCompatActivity() {
             )
 
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "$totalDeleted WhatsApp media & screenshots deleted successfully!", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, "$totalDeleted items clean kar diye gaye hain!", Toast.LENGTH_LONG).show()
                 loadMediaData()
             }
         }
     }
 
-    private fun deleteFromUri(contentUri: android.net.Uri, selection: String, selectionArgs: Array<String>): Int {
+    private fun deleteFromUri(contentUri: Uri, selection: String, selectionArgs: Array<String>): Int {
         var count = 0
         val projection = arrayOf(MediaStore.MediaColumns._ID)
         val cursor = contentResolver.query(contentUri, projection, selection, selectionArgs, null)
