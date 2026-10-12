@@ -4,39 +4,34 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 
-object MediaRepository {
+class MediaRepository(private val context: Context) {
 
-    fun loadGalleryMedia(context: Context): List<MediaItem> {
+    fun getAllMedia(): List<MediaItem> {
         val mediaList = mutableListOf<MediaItem>()
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DISPLAY_NAME,
-            MediaStore.Images.Media.DATE_ADDED
+            MediaStore.Images.Media.DISPLAY_NAME
         )
 
-        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
-
-        context.contentResolver.query(
+        val cursor = context.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             projection,
             null,
             null,
-            sortOrder
-        )?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )
 
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn) ?: "Unknown"
-                val dateAdded = cursor.getLong(dateColumn)
+        cursor?.use {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+
+            while (it.moveToNext()) {
+                val id = it.getLong(idColumn)
+                val name = it.getString(nameColumn) ?: "Media"
                 val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-
-                mediaList.add(MediaItem(id, uri.toString(), name, dateAdded, isVideo = false))
+                mediaList.add(MediaItem(uri = uri.toString(), fileName = name))
             }
         }
-
         return mediaList
     }
 }
