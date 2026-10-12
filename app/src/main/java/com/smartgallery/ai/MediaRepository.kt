@@ -8,30 +8,53 @@ class MediaRepository(private val context: Context) {
 
     fun getAllMedia(): List<MediaItem> {
         val mediaList = mutableListOf<MediaItem>()
-        val projection = arrayOf(
+
+        // Load Images
+        val imageUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val imageProjection = arrayOf(
             MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DISPLAY_NAME
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.DATE_ADDED
         )
 
-        val cursor = context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            "${MediaStore.Images.Media.DATE_ADDED} DESC"
-        )
+        context.contentResolver.query(imageUri, imageProjection, null, null, "${MediaStore.Images.Media.DATE_ADDED} DESC")?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
 
-        cursor?.use {
-            val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn) ?: "Image"
+                val dateAdded = cursor.getLong(dateColumn)
+                val uri = ContentUris.withAppendedId(imageUri, id)
 
-            while (it.moveToNext()) {
-                val id = it.getLong(idColumn)
-                val name = it.getString(nameColumn) ?: "Media"
-                val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                mediaList.add(MediaItem(uri = uri.toString(), fileName = name))
+                mediaList.add(MediaItem(id, uri, name, false, dateAdded))
             }
         }
-        return mediaList
+
+        // Load Videos
+        val videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val videoProjection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.DISPLAY_NAME,
+            MediaStore.Video.Media.DATE_ADDED
+        )
+
+        context.contentResolver.query(videoUri, videoProjection, null, null, "${MediaStore.Video.Media.DATE_ADDED} DESC")?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn) ?: "Video"
+                val dateAdded = cursor.getLong(dateColumn)
+                val uri = ContentUris.withAppendedId(videoUri, id)
+
+                mediaList.add(MediaItem(id, uri, name, true, dateAdded))
+            }
+        }
+
+        return mediaList.sortedByDescending { it.dateAdded }
     }
 }
