@@ -34,4 +34,3 @@ jobs:
       with:
         name: SmartGallery-APK
         path: app/build/outputs/apk/debug/app-debug.apk
-      
