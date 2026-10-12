@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.MediaController
 import android.widget.Toast
@@ -30,16 +29,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var mediaAdapter: MediaAdapter
     private lateinit var repository: MediaRepository
-    private var btnDeleteWhatsApp: Button? = null
 
     private val permissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.entries.all { it.value }
-        if (allGranted) {
+        if (permissions.entries.all { it.value }) {
             loadMediaData()
         } else {
-            Toast.makeText(this, "Permissions deny hone par media load nahi hoga!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Storage permission zaroori hai gallery ke liye!", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -49,8 +46,6 @@ class MainActivity : AppCompatActivity() {
 
         repository = MediaRepository(this)
         recyclerView = findViewById(R.id.recyclerViewMedia)
-        btnDeleteWhatsApp = findViewById(R.id.btnDeleteWhatsApp)
-
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         mediaAdapter = MediaAdapter(emptyList()) { item ->
@@ -61,10 +56,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         recyclerView.adapter = mediaAdapter
-
-        btnDeleteWhatsApp?.setOnClickListener {
-            confirmAndCleanAllMedia()
-        }
 
         checkAndRequestAllPermissions()
     }
@@ -77,9 +68,7 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT
         )
         imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-
         Glide.with(this).load(imageUri).into(imageView)
-
         builder.setView(imageView)
         val dialog = builder.create()
         imageView.setOnClickListener { dialog.dismiss() }
@@ -93,19 +82,13 @@ class MainActivity : AppCompatActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
-
         val mediaController = MediaController(this)
         mediaController.setAnchorView(videoView)
         videoView.setMediaController(mediaController)
         videoView.setVideoURI(videoUri)
-
         builder.setView(videoView)
         val dialog = builder.create()
-
-        dialog.setOnDismissListener {
-            videoView.stopPlayback()
-        }
-
+        dialog.setOnDismissListener { videoView.stopPlayback() }
         dialog.show()
         videoView.start()
     }
@@ -124,9 +107,6 @@ class MainActivity : AppCompatActivity() {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
         }
 
         if (permissionsToRequest.isNotEmpty()) {
@@ -143,60 +123,5 @@ class MainActivity : AppCompatActivity() {
                 mediaAdapter.updateData(mediaList)
             }
         }
-    }
-
-    private fun confirmAndCleanAllMedia() {
-        AlertDialog.Builder(this)
-            .setTitle("Smart Clean Engine")
-            .setMessage("Kya aap WhatsApp Media, Screenshots aur Unwanted Data saaf karna chahte hain?")
-            .setPositiveButton("Delete All") { _, _ ->
-                executeDeepClean()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun executeDeepClean() {
-        CoroutineScope(Dispatchers.IO).launch {
-            var totalDeleted = 0
-
-            totalDeleted += deleteFromUri(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                "${MediaStore.Images.Media.DATA} LIKE ? OR ${MediaStore.Images.Media.DATA} LIKE ?",
-                arrayOf("%WhatsApp%", "%Screenshot%")
-            )
-
-            totalDeleted += deleteFromUri(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                "${MediaStore.Video.Media.DATA} LIKE ?",
-                arrayOf("%WhatsApp%")
-            )
-
-            withContext(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "$totalDeleted items clean kar diye gaye hain!", Toast.LENGTH_LONG).show()
-                loadMediaData()
-            }
-        }
-    }
-
-    private fun deleteFromUri(contentUri: Uri, selection: String, selectionArgs: Array<String>): Int {
-        var count = 0
-        val projection = arrayOf(MediaStore.MediaColumns._ID)
-        val cursor = contentResolver.query(contentUri, projection, selection, selectionArgs, null)
-
-        cursor?.use {
-            val idColumn = it.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            while (it.moveToNext()) {
-                val id = it.getLong(idColumn)
-                val deleteUri = ContentUris.withAppendedId(contentUri, id)
-                try {
-                    val rows = contentResolver.delete(deleteUri, null, null)
-                    if (rows > 0) count++
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-        return count
     }
 }
