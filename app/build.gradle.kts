@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smartgallery"
+    namespace = "com.smartgallery.ai"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.smartgallery"
+        applicationId = "com.smartgallery.ai"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -41,9 +41,9 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 
-    // Room Database Dependencies with KSP
+    // Room Database Dependencies
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
