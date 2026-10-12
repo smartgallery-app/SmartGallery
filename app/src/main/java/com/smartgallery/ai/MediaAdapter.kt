@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.smartgallery.ai.R
 
 class MediaAdapter(
     private var mediaList: List<MediaItem>,
