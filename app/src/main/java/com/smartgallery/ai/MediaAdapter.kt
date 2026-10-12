@@ -3,26 +3,36 @@ package com.smartgallery.ai
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class MediaAdapter(
     private var mediaList: List<MediaItem>,
     private val onItemClick: (MediaItem) -> Unit
-) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val textTitle: TextView = view.findViewById(R.id.textTitle)
+    class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val imageView: ImageView = itemView.findViewById(R.id.imageThumbnail)
+        val textTitle: TextView = itemView.findViewById(R.id.textTitle)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_media, parent, false)
-        return ViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_media, parent, false)
+        return MediaViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
         val item = mediaList[position]
         holder.textTitle.text = item.fileName
+
+        Glide.with(holder.itemView.context)
+            .load(item.uri)
+            .centerCrop()
+            .into(holder.imageView)
+
         holder.itemView.setOnClickListener { onItemClick(item) }
     }
 
