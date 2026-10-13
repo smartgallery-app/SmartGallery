@@ -15,4 +15,7 @@ interface TrashDao {
 
     @Query("DELETE FROM deleted_items WHERE uri = :uriString")
     suspend fun deleteItemByPath(uriString: String)
+
+    @Query("DELETE FROM deleted_items WHERE expiryTimestamp <= :currentTime")
+    suspend fun deleteExpiredItems(currentTime: Long)
 }
