@@ -13,7 +13,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var repository: MediaRepository
     private lateinit var adapter: MediaAdapter
-    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,11 +21,11 @@ class MainActivity : AppCompatActivity() {
         val database = AppDatabase.getDatabase(this)
         repository = MediaRepository(this, database)
 
-        recyclerView = findViewById(R.id.recyclerView)
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         adapter = MediaAdapter(emptyList()) { mediaItem ->
-            // Photo/Video click preview handling
+            // Photo/Video preview click handling
         }
         recyclerView.adapter = adapter
 
