@@ -1,13 +1,18 @@
 package com.smartgallery.ai
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 
-@Entity(tableName = "deleted_items")
-data class DeletedItemEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val uri: String,
-    val deletedAt: Long,
-    val expiresAt: Long,
-    val isAiFlagged: Boolean
-)
+@Dao
+interface DeletedItemDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDeletedItem(item: DeletedItemEntity)
+
+    @Query("DELETE FROM deleted_items WHERE uri = :uriString")
+    suspend fun deleteItemByPath(uriString: String)
+
+    @Query("SELECT * FROM deleted_items")
+    suspend fun getAllDeletedItems(): List<DeletedItemEntity>
+}
