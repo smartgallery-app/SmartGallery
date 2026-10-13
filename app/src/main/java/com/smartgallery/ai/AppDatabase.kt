@@ -1,26 +1,14 @@
 package com.smartgallery.ai
 
 import android.content.Context
-import androidx.room.*
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
 
-@Dao
-interface DeletedItemDao {
-    @Query("SELECT * FROM deleted_items ORDER BY deletionTimestamp DESC")
-    suspend fun getAllDeletedItems(): List<DeletedItemEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertItem(item: DeletedItemEntity)
-
-    @Query("DELETE FROM deleted_items WHERE id = :itemId")
-    suspend fun deleteById(itemId: Long)
-
-    @Query("SELECT * FROM deleted_items WHERE expiryTimestamp <= :currentTime")
-    suspend fun getExpiredItems(currentTime: Long): List<DeletedItemEntity>
-}
-
-@Database(entities = [DeletedItemEntity::class], version = 1, exportSchema = false)
+@Database(entities = [TrashEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun deletedItemDao(): DeletedItemDao
+
+    abstract fun trashDao(): TrashDao
 
     companion object {
         @Volatile
@@ -32,7 +20,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "smart_gallery_db"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
