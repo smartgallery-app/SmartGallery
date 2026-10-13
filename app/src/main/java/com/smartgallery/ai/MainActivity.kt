@@ -1,43 +1,31 @@
-package com.smartgallery.ai
+package com.smartgallery.app
 
 import android.os.Bundle
+import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.google.android.material.chip.ChipGroup
+import com.smartgallery.app.ui.MediaAdapter
+import com.smartgallery.app.ui.MediaFilterHelper
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var repository: MediaRepository
-    private lateinit var adapter: MediaAdapter
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var chipGroupFilters: ChipGroup
+    private lateinit var btnSettings: ImageButton
+    private lateinit var mediaAdapter: MediaAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val database = AppDatabase.getDatabase(this)
-        repository = MediaRepository(this, database)
+        recyclerView = findViewById(R.id.recyclerViewMedia)
+        chipGroupFilters = findViewById(R.id.chipGroupFilters)
+        btnSettings = findViewById(R.id.btnSettings)
 
-        val recyclerView: RecyclerView = findViewById(R.id.recyclerViewMedia)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
-
-        adapter = MediaAdapter(emptyList()) { mediaItem ->
-            // Media preview click handling
-        }
-        recyclerView.adapter = adapter
-
-        loadMediaData()
-    }
-
-    private fun loadMediaData() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val mediaList = repository.getAllMedia()
-            withContext(Dispatchers.Main) {
-                adapter.updateData(mediaList)
-            }
-        }
+        mediaAdapter = MediaAdapter(emptyList())
+        recyclerView.adapter = mediaAdapter
     }
 }
