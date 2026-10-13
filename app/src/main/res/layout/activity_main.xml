@@ -4,13 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212">
+    android:background="#0F172A">
 
     <!-- Top App Bar -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#1E1E1E"
+        android:layout_height="60dp"
+        android:background="#1E293B"
+        android:elevation="4dp"
         android:paddingHorizontal="16dp">
 
         <TextView
@@ -18,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:text="Smart Gallery"
-            android:textColor="#FFFFFF"
+            android:textColor="#F8FAFC"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -31,15 +32,16 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Settings"
             android:src="@android:drawable/ic_menu_preferences"
-            app:tint="#FFFFFF" />
+            app:tint="#F8FAFC" />
     </RelativeLayout>
 
-    <!-- Filter Category Tabs Horizontal Scroll -->
+    <!-- Filter Category Chips -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:background="#0F172A">
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupFilters"
@@ -81,7 +83,7 @@
                 style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Trash (30 Days)" />
+                android:text="Trash" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
@@ -91,6 +93,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="4dp" />
+        android:padding="4dp"
+        android:clipToPadding="false" />
 
 </LinearLayout>
