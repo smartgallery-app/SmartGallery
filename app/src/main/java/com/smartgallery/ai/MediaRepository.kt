@@ -69,8 +69,8 @@ class MediaRepository(private val context: Context, private val database: AppDat
         
         val deletedEntity = TrashEntity(
             uri = mediaItem.uri.toString(),
-            deletedAt = System.currentTimeMillis(),
-            expiresAt = expiryTime,
+            deletionTimestamp = System.currentTimeMillis(),
+            expiryTimestamp = expiryTime,
             isAiFlagged = isAiFlagged
         )
         database.trashDao().insertDeletedItem(deletedEntity)
