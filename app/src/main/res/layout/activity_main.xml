@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#121212">
 
-    <!-- Top Toolbar with Title and Settings/Menu Button -->
+    <!-- Top Toolbar with Clean Stock Gallery Header -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
             app:tint="#FFFFFF" />
     </LinearLayout>
 
-    <!-- Main Grid Area for Photos -->
+    <!-- Main Grid Area (Stock Gallery 3-Column Look) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMedia"
         android:layout_width="match_parent"
@@ -41,7 +41,7 @@
         android:layout_above="@id/bottomNavigationCard"
         android:padding="2dp" />
 
-    <!-- Floating Pill Bottom Navigation -->
+    <!-- Floating Pill Bottom Navigation (Photos / Albums) -->
     <androidx.cardview.widget.CardView
         android:id="@+id/bottomNavigationCard"
         android:layout_width="wrap_content"
