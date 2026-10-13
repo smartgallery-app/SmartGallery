@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         // Standard Stock Gallery 3-Column Grid Layout
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // MediaAdapter Initialization with Full Screen Click Listener
+        // MediaAdapter Initialization
         mediaAdapter = MediaAdapter(emptyList()) { mediaItem ->
             openFullScreenPreview(mediaItem.filePath)
         }
@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
     }
 
-    // Complete Safe Device Media Loader
+    // Safe Device Media Loader
     private fun loadDeviceMedia() {
         allMediaList.clear()
         val projection = arrayOf(
