@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -27,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSettings: ImageButton
     private lateinit var mediaAdapter: MediaAdapter
     private val STORAGE_PERMISSION_CODE = 101
-    private var allMediaList = listOf<MediaFilterHelper.MediaItem>()
+    private var allMediaList = mutableListOf<MediaFilterHelper.MediaItem>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,14 +37,16 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewMedia)
         btnSettings = findViewById(R.id.btnSettings)
 
-        // Standard Gallery Grid View (3 Columns)
+        // Stock Gallery 3-Column Grid Layout
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // MediaAdapter setup
-        mediaAdapter = MediaAdapter(emptyList())
+        // Safe Adapter Initialization with Click Listener for Full Screen Preview
+        mediaAdapter = MediaAdapter(emptyList()) { mediaItem ->
+            openFullScreenPreview(mediaItem.filePath)
+        }
         recyclerView.adapter = mediaAdapter
 
-        // Top 3-Dot Settings Menu Click
+        // Top 3-Dot Settings & Recovery Vault Menu
         btnSettings.setOnClickListener { view ->
             showSettingsMenu(view)
         }
@@ -54,17 +57,17 @@ class MainActivity : AppCompatActivity() {
             requestStoragePermission()
         }
 
-        // Floating Navigation Tabs (Photos / Albums)
+        // Floating Pill Tabs Navigation
         findViewById<TextView>(R.id.tabPhotos)?.setOnClickListener {
             mediaAdapter.updateList(allMediaList)
         }
 
         findViewById<TextView>(R.id.tabAlbums)?.setOnClickListener {
-            // Albums Logic
+            // Albums folder view mode
         }
     }
 
-    // Full-Screen Frame Photo Preview
+    // Normal Gallery Style Borderless Full-Screen Preview
     private fun openFullScreenPreview(imagePath: String) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
@@ -74,7 +77,6 @@ class MainActivity : AppCompatActivity() {
             imageView.setImageBitmap(bitmap)
         }
 
-        // Full Screen Borderless Photo View
         imageView.scaleType = ImageView.ScaleType.CENTER_CROP
         imageView.setBackgroundColor(Color.BLACK)
 
@@ -85,11 +87,11 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Top 3-Dot Settings Menu (Recovery Vault Access)
+    // Settings & Recovery Box Menu
     private fun showSettingsMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
         popup.menu.add(0, 1, 0, "24-Hour Recovery Box (Trash)")
-        popup.menu.add(0, 2, 1, "Settings")
+        popup.menu.add(0, 2, 1, "Settings & Auto-Delete Options")
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -118,7 +120,40 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
     }
 
+    // Load Device Photos like Stock Gallery
     private fun loadDeviceMedia() {
-        // Load media logic
+        allMediaList.clear()
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DATA,
+            MediaStore.Images.Media.DATE_ADDED
+        )
+        val cursor = contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            null,
+            null,
+            MediaStore.Images.Media.DATE_ADDED + " DESC"
+        )
+
+        cursor?.use {
+            val dataColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+            while (it.moveToNext()) {
+                val path = it.getString(dataColumn)
+                if (path != null) {
+                    allMediaList.add(MediaFilterHelper.MediaItem(path))
+                }
+            }
+        }
+        mediaAdapter.updateList(allMediaList)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                loadDeviceMedia()
+            }
+        }
     }
 }
