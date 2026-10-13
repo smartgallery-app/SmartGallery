@@ -67,18 +67,18 @@ class MediaRepository(private val context: Context, private val database: AppDat
         val expiryDays = if (isAiFlagged) 1 else 7
         val expiryTime = System.currentTimeMillis() + (expiryDays * 24 * 60 * 60 * 1000L)
         
-        val deletedEntity = DeletedItemEntity(
+        val deletedEntity = TrashEntity(
             uri = mediaItem.uri.toString(),
             deletedAt = System.currentTimeMillis(),
             expiresAt = expiryTime,
             isAiFlagged = isAiFlagged
         )
-        database.deletedItemDao().insertDeletedItem(deletedEntity)
+        database.trashDao().insertDeletedItem(deletedEntity)
     }
 
     // Restore File
-    suspend fun restoreItem(deletedEntity: DeletedItemEntity) {
-        database.deletedItemDao().deleteItemByPath(deletedEntity.uri)
+    suspend fun restoreItem(deletedEntity: TrashEntity) {
+        database.trashDao().deleteItemByPath(deletedEntity.uri)
     }
 
     // Permanent Delete
