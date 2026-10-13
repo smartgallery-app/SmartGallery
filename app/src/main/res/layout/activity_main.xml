@@ -58,7 +58,7 @@
                 android:text="All Media" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+g/chipScreenshots"
+                android:id="@+id/chipScreenshots"
                 style="@style/Widget.MaterialComponents.Chip.Choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
