@@ -1,99 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@drawable/bg_gallery_gradient">
+    android:background="#121212">
 
-    <!-- Top App Bar -->
-    <RelativeLayout
+    <!-- Top Toolbar with App Title and 3-Dot Menu -->
+    <LinearLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#1E293B"
-        android:elevation="4dp"
-        android:paddingHorizontal="16dp">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
+            android:layout_weight="1"
             android:text="Smart Gallery"
-            android:textColor="#F8FAFC"
-            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <ImageButton
-            android:id="@+id/btnSettings"
+            android:id="@+id/btnToolbarMenu"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Settings"
-            android:src="@android:drawable/ic_menu_preferences"
-            app:tint="#F8FAFC" />
-    </RelativeLayout>
+            android:src="@android:drawable/ic_menu_more_overflow_vert"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
 
-    <!-- Filter Category Chips -->
-    <HorizontalScrollView
+    <!-- Content Area (Photos / Albums Grid) -->
+    <FrameLayout
+        android:id="@+id/contentFrame"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:padding="8dp"
-        android:background="@android:color/transparent">
+        android:layout_height="match_parent"
+        android:layout_below="@id/topBar"
+        android:layout_above="@id/bottomNavigationCard" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupFilters"
+    <!-- Floating Pill Bottom Navigation -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bottomNavigationCard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="30dp"
+        app:cardBackgroundColor="#222222"
+        app:cardElevation="8dp">
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:singleSelection="true">
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="6dp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipAll"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
+            <TextView
+                android:id="@+id/tabPhotos"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="All Media" />
+                android:text="Photos"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="10dp" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipScreenshots"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
+            <TextView
+                android:id="@+id/tabAlbums"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Screenshots" />
+                android:text="Albums"
+                android:textColor="#AAAAAA"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="10dp" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipVideos"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Videos" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipVault"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="24H Vault" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipTrash"
-                style="@style/Widget.MaterialComponents.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Trash" />
-        </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
-
-    <!-- Media Grid RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewMedia"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="4dp"
-        android:clipToPadding="false" />
-
-</LinearLayout>
+</RelativeLayout>
