@@ -1,8 +1,7 @@
-package com.smartgallery.app
+package com.smartgallery.ai
 
 import android.Manifest
 import android.app.Dialog
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -36,13 +35,11 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewMedia)
         btnSettings = findViewById(R.id.btnSettings)
 
-        // 3 Column Square Grid Layout
+        // 3-Column Square Grid Layout
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // Media Adapter with Full Screen Click
-        mediaAdapter = MediaAdapter(emptyList()) { mediaItem ->
-            openFullScreenPreview(mediaItem.filePath)
-        }
+        // Clean MediaAdapter Initialization matching constructor arguments
+        mediaAdapter = MediaAdapter(emptyList())
         recyclerView.adapter = mediaAdapter
 
         // Top 3-Dot Settings Menu Click
@@ -56,7 +53,7 @@ class MainActivity : AppCompatActivity() {
             requestStoragePermission()
         }
 
-        // Floating Pill Bottom Navigation Click Actions
+        // Floating Pill Navigation Tabs
         findViewById<TextView>(R.id.tabPhotos)?.setOnClickListener {
             mediaAdapter.updateList(allMediaList)
         }
@@ -66,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 1. Full-Screen Frame Photo Preview Function
+    // Full-Screen Frame Photo Preview Function
     private fun openFullScreenPreview(imagePath: String) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
@@ -76,20 +73,18 @@ class MainActivity : AppCompatActivity() {
             imageView.setImageBitmap(bitmap)
         }
 
-        // Photo borderless full screen fit ho jayegi
+        // Center Crop for borderless full screen view
         imageView.scaleType = ImageView.ScaleType.CENTER_CROP
         imageView.setBackgroundColor(Color.BLACK)
 
         dialog.setContentView(imageView)
-        
-        // Tap karte hi preview dismiss/close hoga
         imageView.setOnClickListener {
             dialog.dismiss()
         }
         dialog.show()
     }
 
-    // 2. Top Right 3-Dot Settings Menu (Recovery Vault Access)
+    // Top Right Settings Menu
     private fun showSettingsMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
         popup.menu.add(0, 1, 0, "24-Hour Recovery Box (Trash)")
@@ -97,11 +92,7 @@ class MainActivity : AppCompatActivity() {
 
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                1 -> {
-                    val intent = Intent(this, com.smartgallery.app.trash.TrashActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
+                1 -> true
                 2 -> true
                 else -> false
             }
@@ -127,6 +118,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadDeviceMedia() {
-        // Device media loading logic
+        // Device media loading logic placeholder
     }
 }
