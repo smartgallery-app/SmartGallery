@@ -28,7 +28,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_more_overflow_vert"
+            android:src="@android:drawable/ic_menu_preferences"
             app:tint="#FFFFFF" />
     </LinearLayout>
 
