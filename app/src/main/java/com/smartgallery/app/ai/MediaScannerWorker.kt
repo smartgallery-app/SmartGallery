@@ -8,8 +8,8 @@ import androidx.work.WorkerParameters
 import java.io.File
 
 class MediaScannerWorker(
-    private val context: Context,
-    workerParams: WorkerParameters
+    context: Context,
+    private val workerParams: WorkerParameters
 ) : Worker(context, workerParams) {
 
     private val classifier = NSFWClassifier(context)
@@ -23,7 +23,7 @@ class MediaScannerWorker(
         var isExplicit = false
 
         try {
-            // 1. Video Frame Scan (Video ke andar ke frames extract karke)
+            // 1. Video Check (Frames play/extract karke check karega)
             if (filePath.endsWith(".mp4", ignoreCase = true) || filePath.endsWith(".mkv", ignoreCase = true)) {
                 val uri = Uri.fromFile(mediaFile)
                 val frames = sampler.extractFramesAtIntervals(uri, 60000L)
@@ -34,7 +34,7 @@ class MediaScannerWorker(
                     }
                 }
             } 
-            // 2. Photo Pixel Scan (Photo ke pixels decode karke)
+            // 2. Photo Check (Pixels decode karke check karega)
             else {
                 val bitmap = BitmapFactory.decodeFile(filePath)
                 if (bitmap != null && classifier.isNSFW(bitmap)) {
@@ -42,7 +42,7 @@ class MediaScannerWorker(
                 }
             }
 
-            // 3. Agar explicit/ashlil content mila -> Direct Permanent AUTO-DELETE
+            // 3. Explicit / Ashlil content milte hi Direct AUTO-DELETE
             if (isExplicit) {
                 if (mediaFile.exists()) {
                     mediaFile.delete()
