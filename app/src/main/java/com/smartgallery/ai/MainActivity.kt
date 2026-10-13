@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         adapter = MediaAdapter(emptyList()) { mediaItem ->
-            // Photo/Video preview click handling
+            // Media preview click handling
         }
         recyclerView.adapter = adapter
 
