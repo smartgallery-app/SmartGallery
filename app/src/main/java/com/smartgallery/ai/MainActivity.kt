@@ -38,16 +38,16 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewMedia)
         btnSettings = findViewById(R.id.btnSettings)
 
-        // Stock Gallery 3-Column Grid Layout
+        // Standard Stock Gallery 3-Column Grid Layout
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // Correct MediaAdapter Initialization matching constructor
+        // MediaAdapter Initialization with Full Screen Click Listener
         mediaAdapter = MediaAdapter(emptyList()) { mediaItem ->
             openFullScreenPreview(mediaItem.filePath)
         }
         recyclerView.adapter = mediaAdapter
 
-        // Top 3-Dot Settings & Recovery Vault Menu
+        // Settings / Recovery Box Click
         btnSettings.setOnClickListener { view ->
             showSettingsMenu(view)
         }
@@ -58,17 +58,17 @@ class MainActivity : AppCompatActivity() {
             requestStoragePermission()
         }
 
-        // Floating Pill Tabs Navigation
+        // Bottom Navigation Tabs
         findViewById<TextView>(R.id.tabPhotos)?.setOnClickListener {
             mediaAdapter.updateList(allMediaList)
         }
 
         findViewById<TextView>(R.id.tabAlbums)?.setOnClickListener {
-            // Albums folder view mode
+            // Folder view logic
         }
     }
 
-    // Normal Gallery Style Borderless Full-Screen Preview
+    // Borderless Full-Screen Image Preview
     private fun openFullScreenPreview(imagePath: String) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Settings & Recovery Box Menu
+    // Top Right Menu
     private fun showSettingsMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
         popup.menu.add(0, 1, 0, "24-Hour Recovery Box (Trash)")
@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
     }
 
-    // Load Device Photos properly with File object compatibility
+    // Complete Safe Device Media Loader
     private fun loadDeviceMedia() {
         allMediaList.clear()
         val projection = arrayOf(
@@ -144,7 +144,6 @@ class MainActivity : AppCompatActivity() {
                 if (path != null) {
                     val fileObj = File(path)
                     if (fileObj.exists()) {
-                        // Creating proper MediaItem matching helper definition
                         val mediaItem = MediaFilterHelper.MediaItem(
                             filePath = path,
                             file = fileObj,
