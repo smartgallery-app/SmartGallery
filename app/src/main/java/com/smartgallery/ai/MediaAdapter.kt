@@ -1,4 +1,4 @@
-package com.smartgallery.ai
+package com.smartgallery.app.ui
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,40 +6,31 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.smartgallery.app.R
 
-class MediaAdapter(
-    private var mediaList: List<MediaItem>,
-    private val onItemClick: (MediaItem) -> Unit
-) : RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
+class MediaAdapter(private var mediaList: List<MediaFilterHelper.MediaItem>) :
+    RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
 
-    class MediaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: ImageView = view.findViewById(R.id.itemImageView)
-        val videoIndicator: ImageView = view.findViewById(R.id.videoIndicator)
+    class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val imageView: ImageView = itemView.findViewById(R.id.imageViewMedia)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_media, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_media, parent, false)
         return MediaViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
         val item = mediaList[position]
-        
-        Glide.with(holder.imageView.context)
+        Glide.with(holder.itemView.context)
             .load(item.uri)
-            .centerCrop()
             .into(holder.imageView)
-
-        holder.videoIndicator.visibility = if (item.isVideo) View.VISIBLE else View.GONE
-
-        holder.itemView.setOnClickListener {
-            onItemClick(item)
-        }
     }
 
-    override fun getItemCount() = mediaList.size
+    override fun getItemCount(): Int = mediaList.size
 
-    fun updateData(newList: List<MediaItem>) {
+    fun updateList(newList: List<MediaFilterHelper.MediaItem>) {
         mediaList = newList
         notifyDataSetChanged()
     }
