@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.smartgallery.app.R
 import com.smartgallery.app.ui.MediaAdapter
 import com.smartgallery.app.ui.MediaFilterHelper
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,7 +41,7 @@ class MainActivity : AppCompatActivity() {
         // Stock Gallery 3-Column Grid Layout
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // Safe Adapter Initialization with Click Listener for Full Screen Preview
+        // Correct MediaAdapter Initialization matching constructor
         mediaAdapter = MediaAdapter(emptyList()) { mediaItem ->
             openFullScreenPreview(mediaItem.filePath)
         }
@@ -120,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
     }
 
-    // Load Device Photos like Stock Gallery
+    // Load Device Photos properly with File object compatibility
     private fun loadDeviceMedia() {
         allMediaList.clear()
         val projection = arrayOf(
@@ -141,7 +142,18 @@ class MainActivity : AppCompatActivity() {
             while (it.moveToNext()) {
                 val path = it.getString(dataColumn)
                 if (path != null) {
-                    allMediaList.add(MediaFilterHelper.MediaItem(path))
+                    val fileObj = File(path)
+                    if (fileObj.exists()) {
+                        // Creating proper MediaItem matching helper definition
+                        val mediaItem = MediaFilterHelper.MediaItem(
+                            filePath = path,
+                            file = fileObj,
+                            uri = android.net.Uri.fromFile(fileObj),
+                            category = "NORMAL",
+                            timestamp = fileObj.lastModified()
+                        )
+                        allMediaList.add(mediaItem)
+                    }
                 }
             }
         }
