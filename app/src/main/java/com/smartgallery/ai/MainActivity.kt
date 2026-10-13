@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.smartgallery.app.R
 import com.smartgallery.app.ui.MediaAdapter
 import com.smartgallery.app.ui.MediaFilterHelper
 
@@ -35,10 +36,10 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewMedia)
         btnSettings = findViewById(R.id.btnSettings)
 
-        // 3-Column Square Grid Layout
+        // Standard Gallery Grid View (3 Columns)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // Clean MediaAdapter Initialization matching constructor arguments
+        // MediaAdapter setup
         mediaAdapter = MediaAdapter(emptyList())
         recyclerView.adapter = mediaAdapter
 
@@ -53,17 +54,17 @@ class MainActivity : AppCompatActivity() {
             requestStoragePermission()
         }
 
-        // Floating Pill Navigation Tabs
+        // Floating Navigation Tabs (Photos / Albums)
         findViewById<TextView>(R.id.tabPhotos)?.setOnClickListener {
             mediaAdapter.updateList(allMediaList)
         }
 
         findViewById<TextView>(R.id.tabAlbums)?.setOnClickListener {
-            // Albums Section Logic
+            // Albums Logic
         }
     }
 
-    // Full-Screen Frame Photo Preview Function
+    // Full-Screen Frame Photo Preview
     private fun openFullScreenPreview(imagePath: String) {
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         val imageView = ImageView(this)
@@ -73,7 +74,7 @@ class MainActivity : AppCompatActivity() {
             imageView.setImageBitmap(bitmap)
         }
 
-        // Center Crop for borderless full screen view
+        // Full Screen Borderless Photo View
         imageView.scaleType = ImageView.ScaleType.CENTER_CROP
         imageView.setBackgroundColor(Color.BLACK)
 
@@ -84,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // Top Right Settings Menu
+    // Top 3-Dot Settings Menu (Recovery Vault Access)
     private fun showSettingsMenu(anchorView: View) {
         val popup = PopupMenu(this, anchorView)
         popup.menu.add(0, 1, 0, "24-Hour Recovery Box (Trash)")
@@ -118,6 +119,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadDeviceMedia() {
-        // Device media loading logic placeholder
+        // Load media logic
     }
 }
