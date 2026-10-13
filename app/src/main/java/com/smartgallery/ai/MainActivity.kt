@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         val database = AppDatabase.getDatabase(this)
         repository = MediaRepository(this, database)
 
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerViewMedia)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         adapter = MediaAdapter(emptyList()) { mediaItem ->
