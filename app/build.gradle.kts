@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.smartgallery.ai"
+    namespace = "com.smartgallery.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.smartgallery.ai"
+        applicationId = "com.smartgallery.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -19,7 +19,7 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -27,12 +27,10 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -50,10 +48,14 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
-    // WorkManager (Auto Delete Timer)
+    // TensorFlow Lite (Unresolved reference: tensorflow Error Fix)
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
+    // WorkManager (Auto Delete & Background Scanner Timer)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // Glide (Image/Video Preview)
+    // Glide (Image / Video Preview & Filter Thumbnails)
     implementation("com.github.bumptech.glide:glide:4.16.0")
     kapt("com.github.bumptech.glide:compiler:4.16.0")
 
