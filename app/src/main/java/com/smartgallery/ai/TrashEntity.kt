@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class TrashEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val uri: String,
-    val deletedAt: Long,
-    val expiresAt: Long,
+    val deletionTimestamp: Long,
+    val expiryTimestamp: Long,
     val isAiFlagged: Boolean
 )
