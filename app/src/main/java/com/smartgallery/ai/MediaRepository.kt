@@ -62,26 +62,26 @@ class MediaRepository(private val context: Context, private val database: AppDat
         return mediaList.sortedByDescending { it.dateAdded }
     }
 
-    // Move item to Trash Bin (Database Record + 7-Day Expiry Timer)
+    // Move to Trash
     suspend fun moveToTrash(mediaItem: MediaItem, isAiFlagged: Boolean = false) {
         val expiryDays = if (isAiFlagged) 1 else 7
         val expiryTime = System.currentTimeMillis() + (expiryDays * 24 * 60 * 60 * 1000L)
         
         val deletedEntity = DeletedItemEntity(
-            originalPath = mediaItem.uri.toString(),
-            deletedTimestamp = System.currentTimeMillis(),
-            expiryTimestamp = expiryTime,
+            uri = mediaItem.uri.toString(),
+            deletedAt = System.currentTimeMillis(),
+            expiresAt = expiryTime,
             isAiFlagged = isAiFlagged
         )
         database.deletedItemDao().insertDeletedItem(deletedEntity)
     }
 
-    // Restore File Back to Original Gallery View
+    // Restore File
     suspend fun restoreItem(deletedEntity: DeletedItemEntity) {
-        database.deletedItemDao().deleteItemByPath(deletedEntity.originalPath)
+        database.deletedItemDao().deleteItemByPath(deletedEntity.uri)
     }
 
-    // Permanent Hard Delete via Android MediaStore
+    // Permanent Delete
     fun deletePermanently(context: Context, uriString: String): Boolean {
         return try {
             val uri = Uri.parse(uriString)
