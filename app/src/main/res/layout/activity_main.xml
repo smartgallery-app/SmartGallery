@@ -15,7 +15,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Header with Title & Action Buttons -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -24,9 +23,9 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Albums"
+                    android:text="Smart Gallery"
                     android:textColor="#FFFFFF"
-                    android:textSize="26sp"
+                    android:textSize="24sp"
                     android:textStyle="bold"
                     android:layout_alignParentStart="true"
                     android:layout_centerVertical="true" />
@@ -55,29 +54,26 @@
                 </LinearLayout>
             </RelativeLayout>
 
-            <!-- Albums Section Title -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Folders"
+                android:text="Albums"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Albums / Folders Grid -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewAlbums"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false" />
 
-            <!-- Empty State Message -->
             <TextView
                 android:id="@+id/tvNoPhotos"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No Albums Found"
+                android:text="No Folders Found"
                 android:textColor="#888888"
                 android:textSize="16sp"
                 android:gravity="center"
@@ -87,7 +83,6 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/bottomNavLayout"
         android:layout_width="wrap_content"
