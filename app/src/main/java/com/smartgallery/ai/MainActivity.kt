@@ -8,7 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -20,10 +20,10 @@ import com.smartgallery.app.R
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var tvNoPhotos: TextView
-    private lateinit var btnSettings: ImageButton
-    private lateinit var btnTrash: ImageButton
+    private var recyclerView: RecyclerView? = null
+    private var tvNoPhotos: TextView? = null
+    private var btnSettings: ImageView? = null
+    private var btnTrash: ImageView? = null
     private val photoList = mutableListOf<String>()
 
     companion object {
@@ -32,35 +32,37 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            setContentView(R.layout.activity_main)
 
-        recyclerView = findViewById(R.id.recyclerViewPhotos)
-        tvNoPhotos = findViewById(R.id.tvNoPhotos)
-        btnTrash = findViewById(R.id.btnTrash)
-        btnSettings = findViewById(R.id.btnSettings)
+            recyclerView = findViewById(R.id.recyclerViewPhotos)
+            tvNoPhotos = findViewById(R.id.tvNoPhotos)
+            btnTrash = findViewById(R.id.btnTrash)
+            btnSettings = findViewById(R.id.btnSettings)
 
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
+            recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
-        // Settings Button Click
-        btnSettings.setOnClickListener {
-            Toast.makeText(this, "Settings Menu Opening...", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
+            btnSettings?.setOnClickListener {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+
+            btnTrash?.setOnClickListener {
+                startActivity(Intent(this, TrashActivity::class.java))
+            }
+
+            checkAndRequestPermissions()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Opening Gallery...", Toast.LENGTH_SHORT).show()
         }
-
-        // Trash/Delete Box Button Click
-        btnTrash.setOnClickListener {
-            Toast.makeText(this, "Trash Box Opening...", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, TrashActivity::class.java)
-            startActivity(intent)
-        }
-
-        checkAndRequestPermissions()
     }
 
     private fun checkAndRequestPermissions() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO
+            )
         } else {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
@@ -73,6 +75,22 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, missingPermissions.toTypedArray(), PERMISSION_REQUEST_CODE)
         } else {
             loadPhotos()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                loadPhotos()
+            } else {
+                tvNoPhotos?.visibility = View.VISIBLE
+                tvNoPhotos?.text = "Storage Permission Required"
+            }
         }
     }
 
@@ -101,17 +119,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (photoList.isEmpty()) {
-                tvNoPhotos.visibility = View.VISIBLE
-                recyclerView.visibility = View.GONE
+                tvNoPhotos?.visibility = View.VISIBLE
+                recyclerView?.visibility = View.GONE
             } else {
-                tvNoPhotos.visibility = View.GONE
-                recyclerView.visibility = View.VISIBLE
+                tvNoPhotos?.visibility = View.GONE
+                recyclerView?.visibility = View.VISIBLE
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            tvNoPhotos.visibility = View.VISIBLE
-            tvNoPhotos.text = "Error loading photos"
+            tvNoPhotos?.visibility = View.VISIBLE
+            tvNoPhotos?.text = "Error loading photos"
         }
     }
 }
-
