@@ -17,16 +17,16 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var mediaRecyclerView: RecyclerView
+    private lateinit var recyclerView: RecyclerView
     private val PERMISSION_REQUEST_CODE = 100
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Error fix: Sahi ID aur variable reference
-        mediaRecyclerView = findViewById(R.id.recyclerView)
-        mediaRecyclerView.layoutManager = GridLayoutManager(this, 4)
+        recyclerView = findViewById(R.id.recyclerView)
+        // 4 columns grid layout
+        recyclerView.layoutManager = GridLayoutManager(this, 4)
 
         checkPermissionsAndLoadMedia()
     }
@@ -86,8 +86,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        mediaRecyclerView.adapter = MediaAdapter(mediaList) { item ->
-            Toast.makeText(this, "Opening full screen media...", Toast.LENGTH_SHORT).show()
+        recyclerView.adapter = MediaAdapter(mediaList) { item ->
+            Toast.makeText(this, "Opening full screen view", Toast.LENGTH_SHORT).show()
         }
     }
 
