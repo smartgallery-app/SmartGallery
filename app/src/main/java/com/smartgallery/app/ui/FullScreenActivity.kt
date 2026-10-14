@@ -1,31 +1,42 @@
-package com.smartgallery.app
+package com.smartgallery.app.ui
 
-import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
-import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import java.io.File
+import com.smartgallery.app.R
 
 class FullScreenActivity : AppCompatActivity() {
+
+    private var imageView: ImageView? = null
+    private var btnBack: ImageView? = null
+    private var btnDelete: ImageView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val path = intent.getStringExtra("path")
+        try {
+            setContentView(R.layout.activity_full_screen)
 
-        val imageView = ImageView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            setBackgroundColor(Color.BLACK)
-        }
+            imageView = findViewById(R.id.fullScreenImageView)
+            btnBack = findViewById(R.id.btnBack)
+            btnDelete = findViewById(R.id.btnDeletePhoto)
 
-        setContentView(imageView)
+            val photoUriString = intent.getStringExtra("photo_uri")
+            if (photoUriString != null) {
+                val uri = Uri.parse(photoUriString)
+                imageView?.setImageURI(uri)
+            }
 
-        if (path != null) {
-            Glide.with(this).load(File(path)).into(imageView)
+            btnBack?.setOnClickListener {
+                finish()
+            }
+
+            btnDelete?.setOnClickListener {
+                finish()
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
