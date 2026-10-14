@@ -44,20 +44,20 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // Room Database
+    // Room Database (For Auto-Delete & Trash Management)
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
-    // TensorFlow Lite (Required for NSFW / Content Classifier)
+    // TensorFlow Lite (For AI NSFW Classification)
     implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
 
-    // WorkManager (Auto Delete & Trash Timer)
+    // WorkManager (For 24-Hour Auto-Delete Timer Loop)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // Glide
+    // Glide Image & Video Engine
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     // Coroutines
