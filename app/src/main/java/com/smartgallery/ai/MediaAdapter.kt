@@ -26,12 +26,11 @@ class MediaAdapter(
 
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
         val item = mediaList[position]
-        
+
         Glide.with(holder.itemView.context)
             .load(item.uri)
             .into(holder.imageView)
 
-        // Photo ya Video par click karte hi full screen me open karne ke liye
         holder.itemView.setOnClickListener {
             onItemClick?.invoke(item)
         }
