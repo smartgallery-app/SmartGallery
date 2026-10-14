@@ -7,9 +7,12 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.smartgallery.app.R
+import com.smartgallery.app.MediaFilterHelper
 
-class MediaAdapter(private var mediaList: List<MediaFilterHelper.MediaItem>) :
-    RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
+class MediaAdapter(
+    private var mediaList: List<MediaFilterHelper.MediaItem>,
+    private val onItemClick: ((MediaFilterHelper.MediaItem) -> Unit)? = null
+) : RecyclerView.Adapter<MediaAdapter.MediaViewHolder>() {
 
     class MediaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val imageView: ImageView = itemView.findViewById(R.id.imageViewMedia)
@@ -23,12 +26,20 @@ class MediaAdapter(private var mediaList: List<MediaFilterHelper.MediaItem>) :
 
     override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
         val item = mediaList[position]
+        
         Glide.with(holder.itemView.context)
             .load(item.uri)
             .into(holder.imageView)
+
+        // Photo ya Video par click karte hi full screen me open karne ke liye
+        holder.itemView.setOnClickListener {
+            onItemClick?.invoke(item)
+        }
     }
 
-    override fun getItemCount(): Int = mediaList.size
+    override fun getItemCount(): Int {
+        return mediaList.size
+    }
 
     fun updateList(newList: List<MediaFilterHelper.MediaItem>) {
         mediaList = newList
