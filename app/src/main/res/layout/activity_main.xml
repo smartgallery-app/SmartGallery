@@ -1,152 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="#000000">
 
-    <ScrollView
+    <!-- Top Bar -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottomNavLayout"
-        android:padding="16dp"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Top Header: Title & Action Icons (Search & Menu) -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Albums"
-                    android:textColor="#FFFFFF"
-                    android:textSize="28sp"
-                    android:textStyle="bold"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:orientation="horizontal"
-                    android:layout_centerVertical="true"
-                    android:gravity="center_vertical">
-
-                    <!-- Search Icon -->
-                    <ImageView
-                        android:id="@+id/btnSearch"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="20dp"
-                        android:src="@android:drawable/ic_menu_search"
-                        android:contentDescription="Search" />
-
-                    <!-- Three Dots Menu Icon -->
-                    <ImageView
-                        android:id="@+id/btnMenu"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:src="@android:drawable/ic_menu_more"
-                        android:contentDescription="Menu" />
-                </LinearLayout>
-            </RelativeLayout>
-
-            <!-- Pin Section Title -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pin"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_alignParentStart="true" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Adjust"
-                    android:textColor="#0088FF"
-                    android:textSize="14sp"
-                    android:layout_alignParentEnd="true" />
-            </RelativeLayout>
-
-            <!-- Albums RecyclerView -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewAlbums"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:layout_marginBottom="24dp" />
-
-            <!-- More Albums Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="More albums"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <TextView
-                android:id="@+id/tvNoPhotos"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No Folders Found"
-                android:textColor="#888888"
-                android:textSize="16sp"
-                android:gravity="center"
-                android:visibility="gone"
-                android:layout_marginTop="30dp" />
-
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Floating Bottom Navigation Bar (Photos / Albums) -->
-    <LinearLayout
-        android:id="@+id/bottomNavLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="24dp"
-        android:background="#222222"
-        android:padding="6dp"
-        android:orientation="horizontal">
+        android:layout_height="56dp"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical">
 
         <TextView
-            android:id="@+id/btnPhotosTab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Photos"
-            android:textColor="#888888"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="10dp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnAlbumsTab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Albums"
-            android:textColor="#FFFFFF"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="10dp"
+            android:textColor="#ffffff"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
+        <ImageView
+            android:id="@+id/btnSettings"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_alignParentEnd="true"
+            android:src="@android:drawable/ic_menu_manage"
+            app:tint="#ffffff" />
+    </RelativeLayout>
+
+    <!-- Main Media Grid -->
+    <GridView
+        android:id="@+id/galleryGridView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:numColumns="3"
+        android:horizontalSpacing="2dp"
+        android:verticalSpacing="2dp" />
+
+    <!-- Bottom Navigation Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#121212"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Photos"
+            android:textColor="#888888"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Albums"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:textSize="14sp" />
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>
