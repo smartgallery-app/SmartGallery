@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#0F0C29"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Storage & Security Options -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SECURITY & PRIVACY"
+        android:textColor="#03DAC6"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <Switch
+        android:id="@+id/switchAutoDeleteProtection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="AI Auto-Delete Protection"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:checked="true"
+        android:paddingVertical="12dp" />
+
+    <Switch
+        android:id="@+id/switchTrashRecovery"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Keep Deleted Photos in Trash (30 Days)"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:checked="true"
+        android:paddingVertical="12dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#33FFFFFF"
+        android:layout_marginVertical="16dp" />
+
+    <!-- Storage Management -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="STORAGE & CLEANUP"
+        android:textColor="#03DAC6"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvClearCache"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clear App Cache"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:paddingVertical="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
+
+    <TextView
+        android:id="@+id/tvEmptyTrash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Empty Trash Bin Now"
+        android:textColor="#FF5252"
+        android:textSize="16sp"
+        android:paddingVertical="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#33FFFFFF"
+        android:layout_marginVertical="16dp" />
+
+    <!-- About Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ABOUT"
+        android:textColor="#03DAC6"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Smart Gallery v1.0.0 (Official)"
+        android:textColor="#CCCCCC"
+        android:textSize="14sp"
+        android:paddingVertical="8dp" />
+
+</LinearLayout>
