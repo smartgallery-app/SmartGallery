@@ -1,6 +1,7 @@
-package com.example.smartgallery
+package com.smartgallery.app.ui
 
 import android.Manifest
+import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -15,12 +16,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.smartgallery.app.R
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var tvNoPhotos: TextView
-    private lateinit var adapter: PhotoAdapter
+    private lateinit var btnSettings: ImageButton
+    private lateinit var btnTrash: ImageButton
     private val photoList = mutableListOf<String>()
 
     companion object {
@@ -33,16 +36,10 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerViewPhotos)
         tvNoPhotos = findViewById(R.id.tvNoPhotos)
-        val btnTrash: ImageButton = findViewById(R.id.btnTrash)
-        val btnSettings: ImageButton = findViewById(R.id.btnSettings)
+        btnTrash = findViewById(R.id.btnTrash)
+        btnSettings = findViewById(R.id.btnSettings)
 
         recyclerView.layoutManager = GridLayoutManager(this, 3)
-        adapter = PhotoAdapter(photoList) { imagePath ->
-            val intent = Intent(this, FullScreenActivity::class.java)
-            intent.putExtra("IMAGE_PATH", imagePath)
-            startActivity(intent)
-        }
-        recyclerView.adapter = adapter
 
         // Settings Button Click
         btnSettings.setOnClickListener {
@@ -79,47 +76,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                loadPhotos()
-            } else {
-                tvNoPhotos.visibility = View.VISIBLE
-                tvNoPhotos.text = "Permission denied. Allow storage access in Settings."
-            }
-        }
-    }
-
     private fun loadPhotos() {
         photoList.clear()
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        val projection = arrayOf(MediaStore.Images.Media._ID)
         val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
 
         try {
-            val cursor = contentResolver.query(
+            contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection,
                 null,
                 null,
                 sortOrder
-            )
-
-            cursor?.use {
-                val columnIndex = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-                while (it.moveToNext()) {
-                    val path = it.getString(columnIndex)
-                    if (path != null) {
-                        photoList.add(path)
-                    }
+            )?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idColumn)
+                    val contentUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        id
+                    ).toString()
+                    photoList.add(contentUri)
                 }
             }
 
             if (photoList.isEmpty()) {
                 tvNoPhotos.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
             } else {
                 tvNoPhotos.visibility = View.GONE
-                adapter.notifyDataSetChanged()
+                recyclerView.visibility = View.VISIBLE
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -128,3 +114,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
