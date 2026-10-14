@@ -20,7 +20,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SECURITY & PRIVACY"
+        android:text="SECURITY AND PRIVACY"
         android:textColor="#03DAC6"
         android:textSize="12sp"
         android:textStyle="bold"
@@ -56,7 +56,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="STORAGE & CLEANUP"
+        android:text="STORAGE AND CLEANUP"
         android:textColor="#03DAC6"
         android:textSize="12sp"
         android:textStyle="bold"
