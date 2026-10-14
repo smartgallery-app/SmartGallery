@@ -5,12 +5,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -85,7 +89,11 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
 
-        Toast.makeText(this, "Found ${mediaList.size} media files", Toast.LENGTH_SHORT).show()
+        if (mediaList.isNotEmpty()) {
+            recyclerView.adapter = MediaAdapter(mediaList)
+        } else {
+            Toast.makeText(this, "No media found in storage", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -99,5 +107,31 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Storage permission is required", Toast.LENGTH_LONG).show()
         }
+    }
+
+    // Simple Adapter to load images into grid
+    class MediaAdapter(private val items: List<String>) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: ImageView = ImageView(view.context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    250
+                )
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            return ViewHolder(ImageView(parent.context))
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val path = items[position]
+            Glide.with(holder.imageView.context)
+                .load(File(path))
+                .into(holder.imageView)
+        }
+
+        override fun getItemCount() = items.size
     }
 }
