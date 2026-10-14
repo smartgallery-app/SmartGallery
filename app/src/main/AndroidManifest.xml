@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions -->
+    <!-- Storage Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_menu_gallery"
+        android:icon="@mipmap/ic_launcher"
         android:label="Smart Gallery"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Other Activities -->
         <activity android:name="com.smartgallery.app.ui.FullScreenActivity" android:exported="false" />
         <activity android:name="com.smartgallery.app.ui.SettingsActivity" android:exported="false" />
         <activity android:name="com.smartgallery.app.ui.TrashActivity" android:exported="false" />
