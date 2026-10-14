@@ -50,7 +50,11 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
-    // WorkManager (Auto Delete & Background Scanner)
+    // TensorFlow Lite (Required for NSFW / Content Classifier)
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
+    // WorkManager (Auto Delete & Trash Timer)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Glide
