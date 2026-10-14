@@ -22,12 +22,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            setContentView(R.layout.activity_main)
 
-        recyclerView = findViewById(R.id.recyclerView)
-        recyclerView.layoutManager = GridLayoutManager(this, 4)
+            recyclerView = findViewById(R.id.recyclerView)
+            recyclerView.layoutManager = GridLayoutManager(this, 4)
 
-        checkPermissionsAndLoadMedia()
+            checkPermissionsAndLoadMedia()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.Status.LONG).show()
+        }
     }
 
     private fun checkPermissionsAndLoadMedia() {
@@ -57,36 +62,42 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadMedia() {
         val mediaList = ArrayList<MediaFilterHelper.MediaItem>()
-        val projection = arrayOf(
-            MediaStore.MediaColumns.DATA,
-            MediaStore.MediaColumns.MIME_TYPE
-        )
+        try {
+            val projection = arrayOf(
+                MediaStore.MediaColumns.DATA,
+                MediaStore.MediaColumns.MIME_TYPE
+            )
 
-        val cursor = contentResolver.query(
-            MediaStore.Files.getContentUri("external"),
-            projection,
-            null,
-            null,
-            "${MediaStore.MediaColumns.DATE_ADDED} DESC"
-        )
+            val cursor = contentResolver.query(
+                MediaStore.Files.getContentUri("external"),
+                projection,
+                null,
+                null,
+                "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+            )
 
-        cursor?.use {
-            val dataIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
-            val mimeIndex = it.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
+            cursor?.use {
+                val dataIndex = it.getColumnIndex(MediaStore.MediaColumns.DATA)
+                val mimeIndex = it.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
 
-            while (it.moveToNext()) {
-                val path = it.getString(dataIndex)
-                val mimeType = it.getString(mimeIndex) ?: ""
+                if (dataIndex != -1 && mimeIndex != -1) {
+                    while (it.moveToNext()) {
+                        val path = it.getString(dataIndex)
+                        val mimeType = it.getString(mimeIndex) ?: ""
 
-                if (path != null && File(path).exists()) {
-                    val isVideo = mimeType.startsWith("video")
-                    mediaList.add(MediaFilterHelper.MediaItem(path, isVideo))
+                        if (path != null && File(path).exists()) {
+                            val isVideo = mimeType.startsWith("video")
+                            mediaList.add(MediaFilterHelper.MediaItem(path, isVideo))
+                        }
+                    }
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         recyclerView.adapter = MediaAdapter(mediaList) { item ->
-            Toast.makeText(this, "Opening full screen view", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Opening media item", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -99,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMedia()
         } else {
-            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Storage permission is required to load gallery", Toast.LENGTH_LONG).show()
         }
     }
 }
