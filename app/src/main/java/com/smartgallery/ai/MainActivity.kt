@@ -87,6 +87,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        try {
+            if (requestCode == PERMISSION_REQUEST_CODE) {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    loadAlbums()
+                } else {
+                    tvNoPhotos?.visibility = View.VISIBLE
+                    tvNoPhotos?.text = "Storage Permission Required"
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun loadAlbums() {
         try {
             folderList.clear()
@@ -103,7 +123,7 @@ class MainActivity : AppCompatActivity() {
                 val bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
                 while (cursor.moveToNext()) {
                     val folderName = cursor.getString(bucketColumn)
-                    if (!folderName.isNullOrEmpty()) {
+                    if (folderName != null && folderName.isNotEmpty()) {
                         folderList.add(folderName)
                     }
                 }
@@ -118,6 +138,8 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            tvNoPhotos?.visibility = View.VISIBLE
+            tvNoPhotos?.text = "Gallery Loaded"
         }
     }
 }
