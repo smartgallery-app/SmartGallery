@@ -30,24 +30,24 @@ class MainActivity : AppCompatActivity() {
             recyclerView = findViewById(R.id.recyclerView)
             recyclerView.layoutManager = GridLayoutManager(this, 4)
 
-            checkPermissionsAndLoadMedia()
+            checkAndRequestPermissions()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun checkPermissionsAndLoadMedia() {
-        val permissionsList = mutableListOf<String>()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionsList.add(Manifest.permission.READ_MEDIA_IMAGES)
-            permissionsList.add(Manifest.permission.READ_MEDIA_VIDEO)
+    private fun checkAndRequestPermissions() {
+        val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO
+            )
         } else {
-            permissionsList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
-        val missingPermissions = permissionsList.filter {
+        val missingPermissions = requiredPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
 
@@ -64,24 +64,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadMedia() {
         val mediaList = ArrayList<String>()
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        
         try {
-            val projection = arrayOf(MediaStore.MediaColumns.DATA)
             val cursor = contentResolver.query(
-                MediaStore.Files.getContentUri("external"),
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection,
                 null,
                 null,
-                "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+                "${MediaStore.Images.Media.DATE_ADDED} DESC"
             )
 
             cursor?.use {
-                val dataIndex = it.getColumnIndex(MediaStore.MediaColumns.DATA)
-                if (dataIndex != -1) {
-                    while (it.moveToNext()) {
-                        val path = it.getString(dataIndex)
-                        if (path != null && File(path).exists()) {
-                            mediaList.add(path)
-                        }
+                val columnIndex = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                while (it.moveToNext()) {
+                    val imagePath = it.getString(columnIndex)
+                    if (imagePath != null && File(imagePath).exists()) {
+                        mediaList.add(imagePath)
                     }
                 }
             }
@@ -91,8 +90,9 @@ class MainActivity : AppCompatActivity() {
 
         if (mediaList.isNotEmpty()) {
             recyclerView.adapter = MediaAdapter(mediaList)
+            Toast.makeText(this, "${mediaList.size} Photos Loaded", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "No media found in storage", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No photos found", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -102,33 +102,34 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            loadMedia()
-        } else {
-            Toast.makeText(this, "Storage permission is required", Toast.LENGTH_LONG).show()
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults.any { it == PackageManager.PERMISSION_GRANTED }) {
+                loadMedia()
+            } else {
+                Toast.makeText(this, "Storage permission is required", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
-    // Simple Adapter to load images into grid
     class MediaAdapter(private val items: List<String>) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
-        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val imageView: ImageView = ImageView(view.context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    250
-                )
-                scaleType = ImageView.ScaleType.CENTER_CROP
-            }
-        }
+        class ViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            return ViewHolder(ImageView(parent.context))
+            val imageView = ImageView(parent.context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    parent.width / 4,
+                    parent.width / 4
+                )
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setPadding(2, 2, 2, 2)
+            }
+            return ViewHolder(imageView)
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val path = items[position]
             Glide.with(holder.imageView.context)
-                .load(File(path))
+                .load(File(items[position]))
+                .centerCrop()
                 .into(holder.imageView)
         }
 
