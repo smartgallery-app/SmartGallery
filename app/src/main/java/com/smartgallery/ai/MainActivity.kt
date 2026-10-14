@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
             checkPermissionsAndLoadMedia()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.Status.LONG).show()
+            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMedia()
         } else {
-            Toast.makeText(this, "Storage permission is required to load gallery", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Storage permission is required", Toast.LENGTH_LONG).show()
         }
     }
 }
