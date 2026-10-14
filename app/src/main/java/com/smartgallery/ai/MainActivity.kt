@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
 
     private var recyclerViewAlbums: RecyclerView? = null
     private var tvNoPhotos: TextView? = null
-    private var btnSettings: ImageView? = null
-    private var btnTrash: ImageView? = null
+    private var btnMenu: ImageView? = null
+    private var btnSearch: ImageView? = null
     private val folderList = mutableSetOf<String>()
 
     companion object {
@@ -35,12 +35,12 @@ class MainActivity : AppCompatActivity() {
 
             recyclerViewAlbums = findViewById(R.id.recyclerViewAlbums)
             tvNoPhotos = findViewById(R.id.tvNoPhotos)
-            btnSettings = findViewById(R.id.btnSettings)
-            btnTrash = findViewById(R.id.btnTrash)
+            btnMenu = findViewById(R.id.btnMenu)
+            btnSearch = findViewById(R.id.btnSearch)
 
             recyclerViewAlbums?.layoutManager = GridLayoutManager(this, 3)
 
-            btnSettings?.setOnClickListener {
+            btnMenu?.setOnClickListener {
                 try {
                     startActivity(Intent(this, SettingsActivity::class.java))
                 } catch (e: Exception) {
@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            btnTrash?.setOnClickListener {
+            btnSearch?.setOnClickListener {
                 try {
                     startActivity(Intent(this, TrashActivity::class.java))
                 } catch (e: Exception) {
@@ -139,7 +139,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             tvNoPhotos?.visibility = View.VISIBLE
-            tvNoPhotos?.text = "Gallery Loaded"
+            tvNoPhotos?.text = "Albums Loaded"
         }
     }
 }
