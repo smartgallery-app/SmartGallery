@@ -1,66 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#121212"
-    android:padding="16dp">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Top Toolbar with Action Buttons -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Smart Gallery"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true" />
+    <application
+        android:allowBackup="true"
+        android:icon="@android:drawable/ic_menu_gallery"
+        android:label="Smart Gallery"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:orientation="horizontal">
+        <!-- Main Activity -->
+        <activity
+            android:name="com.smartgallery.app.ui.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-            <ImageView
-                android:id="@+id/btnTrash"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="16dp"
-                android:src="@android:drawable/ic_menu_delete"
-                android:contentDescription="Trash" />
+        <!-- Other Activities -->
+        <activity android:name="com.smartgallery.app.ui.FullScreenActivity" android:exported="false" />
+        <activity android:name="com.smartgallery.app.ui.SettingsActivity" android:exported="false" />
+        <activity android:name="com.smartgallery.app.ui.TrashActivity" android:exported="false" />
 
-            <ImageView
-                android:id="@+id/btnSettings"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:contentDescription="Settings" />
-        </LinearLayout>
-    </RelativeLayout>
+    </application>
 
-    <!-- Empty State Text -->
-    <TextView
-        android:id="@+id/tvNoPhotos"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="No Photos Found"
-        android:textColor="#888888"
-        android:textSize="16sp"
-        android:gravity="center"
-        android:visibility="gone"
-        android:layout_marginTop="50dp" />
-
-    <!-- Grid View for Photos -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewPhotos"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-</LinearLayout>
+</manifest>
