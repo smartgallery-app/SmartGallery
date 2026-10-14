@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
 }
 
 android {
@@ -43,10 +44,16 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // WorkManager (Auto Delete & Background Scanner Timer)
+    // Room Database
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    kapt("androidx.room:room-compiler:$roomVersion")
+
+    // WorkManager (Auto Delete & Background Scanner)
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // Glide (Image / Video Preview) - without kapt to prevent build failure
+    // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
     // Coroutines
