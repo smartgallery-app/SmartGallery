@@ -26,10 +26,10 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        checkPermissionsAndLoadImages()
+        checkPermissionsAndLoadMedia()
     }
 
-    private fun checkPermissionsAndLoadImages() {
+    private fun checkPermissionsAndLoadMedia() {
         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_IMAGES
         } else {
@@ -39,12 +39,12 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(permission), PERMISSION_REQUEST_CODE)
         } else {
-            loadImages()
+            loadMedia()
         }
     }
 
-    private fun loadImages() {
-        val imageList = ArrayList<String>()
+    private fun loadMedia() {
+        val mediaList = ArrayList<String>()
         val projection = arrayOf(MediaStore.Images.Media.DATA)
         val cursor = contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -57,14 +57,14 @@ class MainActivity : AppCompatActivity() {
         cursor?.use {
             val columnIndex = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
             while (it.moveToNext()) {
-                val imagePath = it.getString(columnIndex)
-                if (imagePath != null && File(imagePath).exists()) {
-                    imageList.add(imagePath)
+                val path = it.getString(columnIndex)
+                if (path != null && File(path).exists()) {
+                    mediaList.add(path)
                 }
             }
         }
 
-        recyclerView.adapter = MediaAdapter(imageList)
+        recyclerView.adapter = MediaAdapter(mediaList)
     }
 
     override fun onRequestPermissionsResult(
@@ -74,9 +74,9 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            loadImages()
+            loadMedia()
         } else {
-            Toast.makeText(this, "Permission denied to read images", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 }
