@@ -1,6 +1,7 @@
 package com.smartgallery.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -20,7 +22,13 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var btnPhotos: TextView
+    private lateinit var btnAlbums: TextView
     private val PERMISSION_REQUEST_CODE = 100
+
+    private val allPhotos = ArrayList<String>()
+    private val allAlbums = ArrayList<String>()
+    private var isAlbumView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +37,23 @@ class MainActivity : AppCompatActivity() {
 
             recyclerView = findViewById(R.id.recyclerView)
             recyclerView.layoutManager = GridLayoutManager(this, 4)
+
+            btnPhotos = findViewById(R.id.photosTab) // Make sure ID matches your XML layout
+            btnAlbums = findViewById(R.id.albumsTab) // Make sure ID matches your XML layout
+
+            btnPhotos.setOnClickListener {
+                isAlbumView = false
+                btnPhotos.alpha = 1.0f
+                btnAlbums.alpha = 0.6f
+                showPhotosGrid()
+            }
+
+            btnAlbums.setOnClickListener {
+                isAlbumView = true
+                btnAlbums.alpha = 1.0f
+                btnPhotos.alpha = 0.6f
+                showAlbumsGrid()
+            }
 
             checkAndRequestPermissions()
         } catch (e: Exception) {
@@ -58,15 +83,17 @@ class MainActivity : AppCompatActivity() {
                 PERMISSION_REQUEST_CODE
             )
         } else {
-            loadMedia()
+            loadMediaData()
         }
     }
 
-    private fun loadMedia() {
-        val mediaList = ArrayList<String>()
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
-        
+    private fun loadMediaData() {
+        allPhotos.clear()
+        allAlbums.clear()
+        val albumSet = HashSet<String>()
+
         try {
+            val projection = arrayOf(MediaStore.Images.Media.DATA)
             val cursor = contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection,
@@ -79,20 +106,47 @@ class MainActivity : AppCompatActivity() {
                 val columnIndex = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
                 while (it.moveToNext()) {
                     val imagePath = it.getString(columnIndex)
-                    if (imagePath != null && File(imagePath).exists()) {
-                        mediaList.add(imagePath)
+                    if (imagePath != null) {
+                        val file = File(imagePath)
+                        if (file.exists()) {
+                            allPhotos.add(imagePath)
+                            file.parentFile?.name?.let { folderName ->
+                                albumSet.add(folderName)
+                            }
+                        }
                     }
                 }
             }
+            allAlbums.addAll(albumSet)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        if (mediaList.isNotEmpty()) {
-            recyclerView.adapter = MediaAdapter(mediaList)
-            Toast.makeText(this, "${mediaList.size} Photos Loaded", Toast.LENGTH_SHORT).show()
+        showPhotosGrid()
+    }
+
+    private fun showPhotosGrid() {
+        if (allPhotos.isNotEmpty()) {
+            recyclerView.adapter = MediaAdapter(allPhotos) { path ->
+                // Open Photo in Full Screen / Full Frame
+                val intent = Intent(this, FullScreenActivity::class.java).apply {
+                    putExtra("photo_path", path)
+                }
+                startActivity(intent)
+            }
         } else {
             Toast.makeText(this, "No photos found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showAlbumsGrid() {
+        if (allAlbums.isNotEmpty()) {
+            recyclerView.adapter = AlbumAdapter(allAlbums) { albumName ->
+                Toast.makeText(this, "Album: $albumName", Toast.LENGTH_SHORT).show()
+                // Yahan aap specific album ki photos filter karke dikha sakte hain
+            }
+        } else {
+            Toast.makeText(this, "No albums found", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -104,14 +158,15 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults.any { it == PackageManager.PERMISSION_GRANTED }) {
-                loadMedia()
+                loadMediaData()
             } else {
                 Toast.makeText(this, "Storage permission is required", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    class MediaAdapter(private val items: List<String>) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
+    // Adapter for Photos Grid with Click Listener for Full Screen
+    class MediaAdapter(private val items: List<String>, private val onClick: (String) -> Unit) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
         class ViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -127,10 +182,43 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val path = items[position]
             Glide.with(holder.imageView.context)
-                .load(File(items[position]))
+                .load(File(path))
                 .centerCrop()
                 .into(holder.imageView)
+
+            holder.itemView.setOnClickListener {
+                onClick(path)
+            }
+        }
+
+        override fun getItemCount() = items.size
+    }
+
+    // Adapter for Folders/Albums View
+    class AlbumAdapter(private val items: List<String>, private val onClick: (String) -> Unit) : RecyclerView.Adapter<AlbumAdapter.ViewHolder>() {
+        class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val textView = TextView(parent.context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    150
+                )
+                setPadding(30, 40, 30, 40)
+                textSize = 16f
+                setTextColor(android.graphics.Color.WHITE)
+            }
+            return ViewHolder(textView)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val albumName = items[position]
+            holder.textView.text = "📁 $albumName"
+            holder.itemView.setOnClickListener {
+                onClick(albumName)
+            }
         }
 
         override fun getItemCount() = items.size
