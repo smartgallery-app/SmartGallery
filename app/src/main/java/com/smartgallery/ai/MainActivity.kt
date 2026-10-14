@@ -10,7 +10,6 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -20,10 +19,10 @@ import com.smartgallery.app.R
 
 class MainActivity : AppCompatActivity() {
 
-    private var recyclerView: RecyclerView? = null
-    private var tvNoPhotos: TextView? = null
-    private var btnSettings: ImageView? = null
-    private var btnTrash: ImageView? = null
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var tvNoPhotos: TextView
+    private lateinit var btnSettings: ImageView
+    private lateinit var btnTrash: ImageView
     private val photoList = mutableListOf<String>()
 
     companion object {
@@ -32,29 +31,24 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main)
 
-            recyclerView = findViewById(R.id.recyclerViewPhotos)
-            tvNoPhotos = findViewById(R.id.tvNoPhotos)
-            btnTrash = findViewById(R.id.btnTrash)
-            btnSettings = findViewById(R.id.btnSettings)
+        recyclerView = findViewById(R.id.recyclerViewPhotos)
+        tvNoPhotos = findViewById(R.id.tvNoPhotos)
+        btnTrash = findViewById(R.id.btnTrash)
+        btnSettings = findViewById(R.id.btnSettings)
 
-            recyclerView?.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-            btnSettings?.setOnClickListener {
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-
-            btnTrash?.setOnClickListener {
-                startActivity(Intent(this, TrashActivity::class.java))
-            }
-
-            checkAndRequestPermissions()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Opening Gallery...", Toast.LENGTH_SHORT).show()
+        btnSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
+
+        btnTrash.setOnClickListener {
+            startActivity(Intent(this, TrashActivity::class.java))
+        }
+
+        checkAndRequestPermissions()
     }
 
     private fun checkAndRequestPermissions() {
@@ -88,8 +82,8 @@ class MainActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 loadPhotos()
             } else {
-                tvNoPhotos?.visibility = View.VISIBLE
-                tvNoPhotos?.text = "Storage Permission Required"
+                tvNoPhotos.visibility = View.VISIBLE
+                tvNoPhotos.text = "Permission Granted Nahi Hui"
             }
         }
     }
@@ -119,16 +113,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (photoList.isEmpty()) {
-                tvNoPhotos?.visibility = View.VISIBLE
-                recyclerView?.visibility = View.GONE
+                tvNoPhotos.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
             } else {
-                tvNoPhotos?.visibility = View.GONE
-                recyclerView?.visibility = View.VISIBLE
+                tvNoPhotos.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            tvNoPhotos?.visibility = View.VISIBLE
-            tvNoPhotos?.text = "Error loading photos"
+            tvNoPhotos.visibility = View.VISIBLE
+            tvNoPhotos.text = "Error loading photos"
         }
     }
 }
