@@ -25,7 +25,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
-        // 4 columns grid layout
         recyclerView.layoutManager = GridLayoutManager(this, 4)
 
         checkPermissionsAndLoadMedia()
