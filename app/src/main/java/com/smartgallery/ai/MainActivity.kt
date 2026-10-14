@@ -17,26 +17,23 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var mediaRecyclerView: RecyclerView
     private val PERMISSION_REQUEST_CODE = 100
-    
-    // Video frame analysis interval set to 3-5 seconds (4000 ms)
-    private val FRAME_INTERVAL_MS = 4000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        recyclerView = findViewById(R.id.recyclerView)
-        // Display par photos ki sankhya badal kar 4 columns kar di hai
-        recyclerView.layoutManager = GridLayoutManager(this, 4)
+        // Error fix: Sahi ID aur variable reference
+        mediaRecyclerView = findViewById(R.id.recyclerView)
+        mediaRecyclerView.layoutManager = GridLayoutManager(this, 4)
 
         checkPermissionsAndLoadMedia()
     }
 
     private fun checkPermissionsAndLoadMedia() {
         val permissionsList = mutableListOf<String>()
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionsList.add(Manifest.permission.READ_MEDIA_IMAGES)
             permissionsList.add(Manifest.permission.READ_MEDIA_VIDEO)
@@ -89,8 +86,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        recyclerView.adapter = MediaAdapter(mediaList) { item ->
-            // Photo/Video par tap karne par full screen view ka action
+        mediaRecyclerView.adapter = MediaAdapter(mediaList) { item ->
             Toast.makeText(this, "Opening full screen media...", Toast.LENGTH_SHORT).show()
         }
     }
