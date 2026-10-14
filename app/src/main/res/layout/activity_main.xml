@@ -15,6 +15,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Top Header -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -37,6 +38,7 @@
                     android:orientation="horizontal"
                     android:layout_centerVertical="true">
 
+                    <!-- Trash Button -->
                     <ImageView
                         android:id="@+id/btnTrash"
                         android:layout_width="28dp"
@@ -45,6 +47,7 @@
                         android:src="@android:drawable/ic_menu_delete"
                         android:contentDescription="Trash" />
 
+                    <!-- Settings Button -->
                     <ImageView
                         android:id="@+id/btnSettings"
                         android:layout_width="28dp"
@@ -57,7 +60,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Albums"
+                android:text="Albums &amp; Folders"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -83,6 +86,7 @@
         </LinearLayout>
     </ScrollView>
 
+    <!-- Bottom Navigation -->
     <LinearLayout
         android:id="@+id/bottomNavLayout"
         android:layout_width="wrap_content"
