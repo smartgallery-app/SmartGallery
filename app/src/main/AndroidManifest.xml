@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Storage Permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
@@ -13,7 +12,6 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
-        <!-- Main Launcher Activity -->
         <activity
             android:name="com.smartgallery.app.ui.MainActivity"
             android:exported="true">
@@ -23,18 +21,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Other UI Activities -->
-        <activity 
-            android:name="com.smartgallery.app.ui.FullScreenActivity" 
-            android:exported="false" />
-            
-        <activity 
-            android:name="com.smartgallery.app.ui.SettingsActivity" 
-            android:exported="false" />
-            
-        <activity 
-            android:name="com.smartgallery.app.ui.TrashActivity" 
-            android:exported="false" />
+        <activity android:name="com.smartgallery.app.ui.FullScreenActivity" android:exported="false" />
+        <activity android:name="com.smartgallery.app.ui.SettingsActivity" android:exported="false" />
+        <activity android:name="com.smartgallery.app.ui.TrashActivity" android:exported="false" />
 
     </application>
 
