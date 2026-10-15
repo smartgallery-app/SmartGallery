@@ -12,6 +12,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Crash Prevention Handler
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             throwable.printStackTrace()
         }
