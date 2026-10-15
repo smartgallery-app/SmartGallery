@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SECURITY &amp; PRIVACY"
+        android:text="SECURITY AND PRIVACY"
         android:textColor="#00e5ff"
         android:textSize="12sp"
         android:textStyle="bold"
