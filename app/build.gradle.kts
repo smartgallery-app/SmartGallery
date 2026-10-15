@@ -42,6 +42,6 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // Image Loader
+    // Glide Engine for Fast Image Loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
 }
