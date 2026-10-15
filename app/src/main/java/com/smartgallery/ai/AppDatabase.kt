@@ -1,11 +1,11 @@
-package com.smartgallery.app.data
+package com.smartgallery.app.ai
 
 import android.content.Context
 
 class AppDatabase(context: Context) {
     companion object {
         @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private var INSTANCE: AppDatabase? = nil
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
