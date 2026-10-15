@@ -14,20 +14,12 @@
         android:paddingHorizontal="16dp">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="Albums"
             android:textColor="@android:color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/btnSettings"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@android:drawable/ic_menu_manage"
-            android:tint="@android:color/white" />
     </LinearLayout>
 
     <!-- Folder List RecyclerView -->
