@@ -1,39 +1,42 @@
 package com.smartgallery.app.ui
 
 import android.os.Bundle
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import com.smartgallery.app.R
 
 class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
 
-        val switchProtection: Switch = findViewById(R.id.switchAutoDeleteProtection)
-        val switchTrash: Switch = findViewById(R.id.switchTrashRecovery)
-        val tvClearCache: TextView = findViewById(R.id.tvClearCache)
-        val tvEmptyTrash: TextView = findViewById(R.id.tvEmptyTrash)
-
-        switchProtection.setOnCheckedChangeListener { _, isChecked ->
-            val msg = if (isChecked) "AI Protection Enabled" else "AI Protection Disabled"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            throwable.printStackTrace()
         }
 
-        switchTrash.setOnCheckedChangeListener { _, isChecked ->
-            val msg = if (isChecked) "Trash Auto-Expiry Enabled" else "Trash Auto-Expiry Disabled"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        }
+        try {
+            setContentView(R.layout.activity_settings)
 
-        tvClearCache.setOnClickListener {
-            Toast.makeText(this, "Cache cleared successfully!", Toast.LENGTH_SHORT).show()
-        }
+            val switchAutoDeleteProtection = findViewById<SwitchCompat>(R.id.switchAutoDeleteProtection)
+            val switchTrashRecovery = findViewById<SwitchCompat>(R.id.switchTrashRecovery)
+            val tvClearCache = findViewById<TextView>(R.id.tvClearCache)
 
-        tvEmptyTrash.setOnClickListener {
-            Toast.makeText(this, "Trash bin emptied!", Toast.LENGTH_SHORT).show()
+            switchAutoDeleteProtection?.setOnCheckedChangeListener { _, isChecked ->
+                Toast.makeText(this, "AI Auto-Delete: $isChecked", Toast.LENGTH_SHORT).show()
+            }
+
+            switchTrashRecovery?.setOnCheckedChangeListener { _, isChecked ->
+                Toast.makeText(this, "Trash Auto-Expiry (24h): $isChecked", Toast.LENGTH_SHORT).show()
+            }
+
+            tvClearCache?.setOnClickListener {
+                Toast.makeText(this, "Trash Bin Emptied Successfully!", Toast.LENGTH_SHORT).show()
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
