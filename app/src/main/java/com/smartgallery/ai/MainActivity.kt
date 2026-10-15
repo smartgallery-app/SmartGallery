@@ -1,12 +1,10 @@
 package com.smartgallery.app.ui
 
 import android.Manifest
-import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -25,7 +23,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Crash Prevention Override
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             throwable.printStackTrace()
         }
@@ -67,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         if (missing.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, missing.toTypedArray(), PERMISSION_REQUEST_CODE)
         } else {
-            loadAlbumsAndStartAI()
+            Toast.makeText(this, "Gallery Ready", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -79,44 +76,9 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                loadAlbumsAndStartAI()
+                Toast.makeText(this, "Permissions Granted", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Permissions granted for Gallery & Folder Access", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun loadAlbumsAndStartAI() {
-        activityScope.launch(Dispatchers.IO) {
-            try {
-                // Fetch System Photos, Camera & Custom Album Folders
-                val projection = arrayOf(
-                    MediaStore.Images.Media._ID,
-                    MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-                    MediaStore.Images.Media.DATA
-                )
-
-                val cursor = contentResolver.query(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    null,
-                    null,
-                    "${MediaStore.Images.Media.DATE_ADDED} DESC"
-                )
-
-                cursor?.use {
-                    val bucketColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-                    while (it.moveToNext()) {
-                        val folderName = it.getString(bucketColumn)
-                        // Folder indexing complete
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Albums & AI Folder Protection Ready", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+                Toast.makeText(this, "Permission required for gallery access", Toast.LENGTH_SHORT).show()
             }
         }
     }
