@@ -12,7 +12,6 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Crash Prevention Handler
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
             throwable.printStackTrace()
         }
@@ -25,15 +24,15 @@ class SettingsActivity : AppCompatActivity() {
             val btnEmptyTrash = findViewById<TextView>(R.id.btnEmptyTrash)
 
             switchAiProtection?.setOnCheckedChangeListener { _, isChecked ->
-                Toast.makeText(this, "AI Protection: $isChecked", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "AI Auto-Delete: $isChecked", Toast.LENGTH_SHORT).show()
             }
 
             switchTrashRetention?.setOnCheckedChangeListener { _, isChecked ->
-                Toast.makeText(this, "Trash Retention: $isChecked", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Trash Auto-Expiry (24h): $isChecked", Toast.LENGTH_SHORT).show()
             }
 
             btnEmptyTrash?.setOnClickListener {
-                Toast.makeText(this, "Trash Emptied Successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Trash Bin Emptied Successfully!", Toast.LENGTH_SHORT).show()
             }
 
         } catch (e: Exception) {
