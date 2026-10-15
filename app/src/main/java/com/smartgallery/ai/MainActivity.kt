@@ -41,7 +41,12 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
-        folderAdapter = FolderAdapter(this, folderList)
+        
+        folderAdapter = FolderAdapter(this, folderList) { folderName ->
+            val intent = Intent(this, MediaListActivity::class.java)
+            intent.putExtra("FOLDER_NAME", folderName)
+            startActivity(intent)
+        }
         recyclerView.adapter = folderAdapter
 
         checkAndRequestPermissions()
@@ -128,7 +133,8 @@ class MainActivity : AppCompatActivity() {
 
 class FolderAdapter(
     private val context: Context,
-    private val folders: List<FolderItem>
+    private val folders: List<FolderItem>,
+    private val onClick: (String) -> Unit
 ) : RecyclerView.Adapter<FolderAdapter.FolderViewHolder>() {
 
     class FolderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -151,6 +157,8 @@ class FolderAdapter(
             .load(folder.coverUri)
             .centerCrop()
             .into(holder.imgThumbnail)
+
+        holder.itemView.setOnClickListener { onClick(folder.name) }
     }
 
     override fun getItemCount(): Int = folders.size
