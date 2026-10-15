@@ -41,5 +41,10 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // Background Processing Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // High Performance Image & Video Thumbnail Loader
     implementation("com.github.bumptech.glide:glide:4.16.0")
 }
