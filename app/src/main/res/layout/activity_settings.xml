@@ -40,7 +40,7 @@
             android:textSize="16sp" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchAiProtection"
+            android:id="@+id/switchAutoDeleteProtection"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
@@ -61,7 +61,7 @@
             android:textSize="16sp" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchTrashRetention"
+            android:id="@+id/switchTrashRecovery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
@@ -73,7 +73,7 @@
         android:layout_marginBottom="24dp" />
 
     <TextView
-        android:id="@+id/btnEmptyTrash"
+        android:id="@+id/tvClearCache"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Empty Trash Bin Now"
