@@ -24,7 +24,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             switchTrashRecovery?.setOnCheckedChangeListener { _, isChecked ->
-                Toast.makeText(this, "Trash 24h Auto-Expiry: $isChecked", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Trash Auto-Recovery Bin: $isChecked", Toast.LENGTH_SHORT).show()
             }
 
             tvClearCache?.setOnClickListener {
