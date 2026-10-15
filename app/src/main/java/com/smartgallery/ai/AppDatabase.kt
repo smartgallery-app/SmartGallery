@@ -1,28 +1,15 @@
-package com.smartgallery.ai
+package com.smartgallery.app.data
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
 
-@Database(entities = [TrashEntity::class], version = 1, exportSchema = false)
-abstract class AppDatabase : RoomDatabase() {
-
-    abstract fun trashDao(): TrashDao
-
+class AppDatabase(context: Context) {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
+        fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "smart_gallery_db"
-                )
-                .fallbackToDestructiveMigration()
-                .build()
+                val instance = AppDatabase(context)
                 INSTANCE = instance
                 instance
             }
