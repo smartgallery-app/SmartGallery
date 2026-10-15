@@ -12,10 +12,6 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
-            throwable.printStackTrace()
-        }
-
         try {
             setContentView(R.layout.activity_settings)
 
@@ -24,11 +20,11 @@ class SettingsActivity : AppCompatActivity() {
             val tvClearCache = findViewById<TextView>(R.id.tvClearCache)
 
             switchAutoDeleteProtection?.setOnCheckedChangeListener { _, isChecked ->
-                Toast.makeText(this, "AI Auto-Delete: $isChecked", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "AI Auto-Delete Protection: $isChecked", Toast.LENGTH_SHORT).show()
             }
 
             switchTrashRecovery?.setOnCheckedChangeListener { _, isChecked ->
-                Toast.makeText(this, "Trash Auto-Expiry (24h): $isChecked", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Trash 24h Auto-Expiry: $isChecked", Toast.LENGTH_SHORT).show()
             }
 
             tvClearCache?.setOnClickListener {
