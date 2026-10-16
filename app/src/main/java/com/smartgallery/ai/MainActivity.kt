@@ -34,7 +34,7 @@ data class MediaItem(
     val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
     var tags: List<String> = emptyList(),
-    var deletedTimestamp: Long = 0L // Deletion Time Tracking
+    var deletedTimestamp: Long = 0L
 )
 
 class GalleryAdapter(
@@ -88,9 +88,8 @@ class MainActivity : AppCompatActivity() {
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
     
-    // Dual Recovery Boxes
-    private val recoveryBox24Hours = mutableListOf<MediaItem>() // 24-Hour AI Scan Box
-    private val recoveryBox30Days = mutableListOf<MediaItem>()  // 30-Day Normal Trash Box
+    private val recoveryBox24Hours = mutableListOf<MediaItem>()
+    private val recoveryBox30Days = mutableListOf<MediaItem>()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: PhotoView
@@ -102,7 +101,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var galleryAdapter: GalleryAdapter
     private var isAlbumView = false
-    private var currentActiveBox = 0 // 0 = Main, 1 = 24h Box, 2 = 30d Box
+    private var currentActiveBox = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -208,18 +207,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Auto cleanup logic based on timestamps
     private fun cleanExpiredItems() {
         val currentTime = System.currentTimeMillis()
         val ONE_DAY_MS = 24 * 60 * 60 * 1000L
         val THIRTY_DAYS_MS = 30L * ONE_DAY_MS
 
-        // Auto delete 24h items permanently after 24 hours
-        recoveryBox24Hours.removeAll { currentTime - it.deletedTimestamp > ONE_DAY_MS }
-
-        // Auto delete 30d items permanently after 30 days
-        recoveryBox30Days.removeAll { currentTime - it.deletedTimestamp > THIRTY_DAYS_MS }
+        recoveryBox24Hours.removeAll { currentTime - itemDeletionTime(it) > ONE_DAY_MS }
+        recoveryBox30Days.removeAll { currentTime - itemDeletionTime(it) > THIRTY_DAYS_MS }
     }
+
+    private fun itemDeletionTime(item: MediaItem): Long = item.deletedTimestamp
 
     private fun showPhotosTab() {
         isAlbumView = false
@@ -260,7 +257,7 @@ class MainActivity : AppCompatActivity() {
         currentActiveBox = 1
         isAlbumView = false
         cleanExpiredItems()
-        txtTitle.text = "24-Hour Express Recovery"
+        txtTitle.text = "24-Hour AI Recovery Box"
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
@@ -270,7 +267,7 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
 
-        Toast.makeText(this, "${recoveryBox24Hours.size} items (Auto-delete in 24h)", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "${recoveryBox24Hours.size} items in 24h Box", Toast.LENGTH_SHORT).show()
     }
 
     private fun show30DayRecoveryBox() {
@@ -287,7 +284,7 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
 
-        Toast.makeText(this, "${recoveryBox30Days.size} items (Auto-delete in 30d)", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "${recoveryBox30Days.size} items in 30d Trash", Toast.LENGTH_SHORT).show()
     }
 
     private fun openAlbum(folderName: String) {
@@ -337,11 +334,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Main Menu: 30-din wala Trash Box bilkul samne rahega
     private fun showOptionsMenu() {
         val options = arrayOf(
             "Scan & Explicit Content Detection (AI)",
-            "24-Hour Recovery Box (AI Deleted)",
-            "30-Day Recovery Box (Normal Trash)",
+            "30-Day Trash Box (Recovery)",
             "Settings",
             "About"
         )
@@ -350,12 +347,27 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> runAISafetyScanAndDelete()
-                    1 -> show24HourRecoveryBox()
-                    2 -> show30DayRecoveryBox()
-                    3 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
-                    4 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                    1 -> show30DayRecoveryBox() // Samne wala 30-day trash
+                    2 -> showSettingsDialog()     // Settings jiske andar 24-hour box rahega
+                    3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
+            .show()
+    }
+
+    // Settings Dialog: Iske andar 24-ghante wala AI Recovery Box rahega
+    private fun showSettingsDialog() {
+        val settingsOptions = arrayOf(
+            "24-Hour AI Recovery Box (Secure)"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setItems(settingsOptions) { _, which ->
+                when (which) {
+                    0 -> show24HourRecoveryBox()
+                }
+            }
+            .setPositiveButton("Close", null)
             .show()
     }
 
@@ -384,7 +396,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (itemsToRemove.isNotEmpty()) {
-            // Sent to 24-Hour Express Box for auto-deletion
             recoveryBox24Hours.addAll(itemsToRemove)
             allMediaList.removeAll(itemsToRemove)
             Toast.makeText(this, "Moved ${itemsToRemove.size} explicit items to 24-Hour Box!", Toast.LENGTH_LONG).show()
