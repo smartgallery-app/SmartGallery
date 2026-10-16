@@ -5,6 +5,8 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -24,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.github.chrisbanes.photoview.PhotoView
 import com.smartgallery.app.R
 
 data class MediaItem(
@@ -87,7 +90,7 @@ class MainActivity : AppCompatActivity() {
     private val displayList = mutableListOf<MediaItem>()
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var fullScreenImageView: ImageView
+    private lateinit var fullScreenImageView: PhotoView
     private lateinit var txtTitle: TextView
     private lateinit var tabPhotos: TextView
     private lateinit var tabAlbums: TextView
@@ -96,6 +99,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var galleryAdapter: GalleryAdapter
     private var isAlbumView = false
+    private var currentSelectedUri: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -270,8 +274,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openFullScreen(uri: String) {
+        currentSelectedUri = uri
         recyclerView.visibility = View.GONE
         fullScreenImageView.visibility = View.VISIBLE
+        fullScreenImageView.colorFilter = null // Filter reset
         Glide.with(this).load(uri).into(fullScreenImageView)
     }
 
@@ -306,17 +312,83 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showOptionsMenu() {
-        val options = arrayOf("Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
+        val options = if (fullScreenImageView.visibility == View.VISIBLE) {
+            arrayOf("Apply Photo Filters", "Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
+        } else {
+            arrayOf("Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
+        }
+
         AlertDialog.Builder(this)
             .setTitle("Menu Options")
             .setItems(options) { _, which ->
-                when (which) {
-                    0 -> runAISafetyScanAndDelete()
-                    1 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
-                    2 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                if (fullScreenImageView.visibility == View.VISIBLE) {
+                    when (which) {
+                        0 -> showPhotoFilterDialog()
+                        1 -> runAISafetyScanAndDelete()
+                        2 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
+                        3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    when (which) {
+                        0 -> runAISafetyScanAndDelete()
+                        1 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
+                        2 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .show()
+    }
+
+    private fun showPhotoFilterDialog() {
+        val filterNames = arrayOf("Normal / Reset", "Black & White (Grayscale)", "Sepia (Vintage)", "Invert Colors", "High Contrast")
+        AlertDialog.Builder(this)
+            .setTitle("Select Photo Filter")
+            .setItems(filterNames) { _, index ->
+                when (index) {
+                    0 -> fullScreenImageView.colorFilter = null
+                    1 -> applyGrayscaleFilter()
+                    2 -> applySepiaFilter()
+                    3 -> applyInvertFilter()
+                    4 -> applyHighContrastFilter()
+                }
+            }
+            .show()
+    }
+
+    private fun applyGrayscaleFilter() {
+        val matrix = ColorMatrix().apply { setSaturation(0f) }
+        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
+    }
+
+    private fun applySepiaFilter() {
+        val matrix = ColorMatrix()
+        matrix.set(floatArrayOf(
+            0.393f, 0.769f, 0.189f, 0f, 0f,
+            0.349f, 0.686f, 0.168f, 0f, 0f,
+            0.272f, 0.534f, 0.131f, 0f, 0f,
+            0f, 0f, 0f, 1f, 0f
+        ))
+        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
+    }
+
+    private fun applyInvertFilter() {
+        val matrix = ColorMatrix(floatArrayOf(
+            -1f, 0f, 0f, 0f, 255f,
+            0f, -1f, 0f, 0f, 255f,
+            0f, 0f, -1f, 0f, 255f,
+            0f, 0f, 0f, 1f, 0f
+        ))
+        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
+    }
+
+    private fun applyHighContrastFilter() {
+        val matrix = ColorMatrix(floatArrayOf(
+            2f, 0f, 0f, 0f, -100f,
+            0f, 2f, 0f, 0f, -100f,
+            0f, 0f, 2f, 0f, -100f,
+            0f, 0f, 0f, 1f, 0f
+        ))
+        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
     }
 
     private fun runAISafetyScanAndDelete() {
@@ -328,13 +400,11 @@ class MainActivity : AppCompatActivity() {
             val uri = Uri.parse(item.uri)
 
             if (item.isVideo) {
-                // Video Logic: Extract frame at 60 seconds (1 minute mark)
                 val isSensitiveVideo = scanVideoAtOneMinute(uri)
                 if (isSensitiveVideo) {
                     itemsToDelete.add(item)
                 }
             } else {
-                // Image Logic
                 AIScannerHelper.scanImageForSafetyAndTags(this, uri) { isSensitive, tags ->
                     item.tags = tags
                     if (isSensitive) {
@@ -361,17 +431,14 @@ class MainActivity : AppCompatActivity() {
         showPhotosTab()
     }
 
-    // Video ke 60th second par frame nikal kar check karne ka logic
     private fun scanVideoAtOneMinute(videoUri: Uri): Boolean {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(this, videoUri)
-            // 60 seconds = 60,000,000 microseconds
             val frameBitmap = retriever.getFrameAtTime(60_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
             
             var isExplicit = false
             if (frameBitmap != null) {
-                // Bitmap ko AI Scanner se scan karwa rahe hain
                 AIScannerHelper.scanBitmapForSafety(frameBitmap) { sensitive ->
                     isExplicit = sensitive
                 }
