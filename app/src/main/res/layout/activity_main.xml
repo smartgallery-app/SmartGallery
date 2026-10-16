@@ -59,7 +59,7 @@
         android:visibility="gone"
         android:background="@android:color/black" />
 
-    <!-- Batch Selection / Single Photo Action Bar -->
+    <!-- Batch Selection / Action Bar -->
     <LinearLayout
         android:id="@+id/bottomActionLayout"
         android:layout_width="match_parent"
