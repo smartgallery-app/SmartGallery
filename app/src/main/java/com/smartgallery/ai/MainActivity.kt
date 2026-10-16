@@ -5,8 +5,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -35,7 +33,8 @@ data class MediaItem(
     val folderName: String,
     val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
-    var tags: List<String> = emptyList()
+    var tags: List<String> = emptyList(),
+    var deletedTimestamp: Long = 0L // Deletion Time Tracking
 )
 
 class GalleryAdapter(
@@ -88,6 +87,10 @@ class MainActivity : AppCompatActivity() {
     private val PERMISSION_REQUEST_CODE = 101
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
+    
+    // Dual Recovery Boxes
+    private val recoveryBox24Hours = mutableListOf<MediaItem>() // 24-Hour AI Scan Box
+    private val recoveryBox30Days = mutableListOf<MediaItem>()  // 30-Day Normal Trash Box
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: PhotoView
@@ -99,7 +102,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var galleryAdapter: GalleryAdapter
     private var isAlbumView = false
-    private var currentSelectedUri: String? = null
+    private var currentActiveBox = 0 // 0 = Main, 1 = 24h Box, 2 = 30d Box
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -115,10 +118,16 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView.layoutManager = GridLayoutManager(this, 3)
         galleryAdapter = GalleryAdapter(this, displayList, isAlbumView) { item ->
-            if (isAlbumView) {
-                openAlbum(item.folderName)
-            } else {
-                openFullScreen(item.uri)
+            when (currentActiveBox) {
+                1 -> showRestoreDialog(item, is24HourBox = true)
+                2 -> showRestoreDialog(item, is24HourBox = false)
+                else -> {
+                    if (isAlbumView) {
+                        openAlbum(item.folderName)
+                    } else {
+                        openFullScreen(item.uri)
+                    }
+                }
             }
         }
         recyclerView.adapter = galleryAdapter
@@ -155,38 +164,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadMediaFromStorage() {
         allMediaList.clear()
-
         loadImages()
         loadVideos()
-
-        if (allMediaList.isEmpty()) {
-            Toast.makeText(this, "No media found on device!", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Loaded ${allMediaList.size} media items", Toast.LENGTH_SHORT).show()
-        }
-
+        cleanExpiredItems()
         showPhotosTab()
     }
 
     private fun loadImages() {
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME
-        )
+        val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
         val sortOrder = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-
-        val cursor: Cursor? = contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            sortOrder
-        )
+        val cursor: Cursor? = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)
 
         cursor?.use { c ->
             val idCol = c.getColumnIndex(MediaStore.Images.Media._ID)
             val bucketCol = c.getColumnIndex(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-
             if (idCol != -1) {
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
@@ -199,24 +190,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadVideos() {
-        val projection = arrayOf(
-            MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.BUCKET_DISPLAY_NAME
-        )
+        val projection = arrayOf(MediaStore.Video.Media._ID, MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
         val sortOrder = "${MediaStore.Video.Media.DATE_MODIFIED} DESC"
-
-        val cursor: Cursor? = contentResolver.query(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            sortOrder
-        )
+        val cursor: Cursor? = contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)
 
         cursor?.use { c ->
             val idCol = c.getColumnIndex(MediaStore.Video.Media._ID)
             val bucketCol = c.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-
             if (idCol != -1) {
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
@@ -228,8 +208,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Auto cleanup logic based on timestamps
+    private fun cleanExpiredItems() {
+        val currentTime = System.currentTimeMillis()
+        val ONE_DAY_MS = 24 * 60 * 60 * 1000L
+        val THIRTY_DAYS_MS = 30L * ONE_DAY_MS
+
+        // Auto delete 24h items permanently after 24 hours
+        recoveryBox24Hours.removeAll { currentTime - it.deletedTimestamp > ONE_DAY_MS }
+
+        // Auto delete 30d items permanently after 30 days
+        recoveryBox30Days.removeAll { currentTime - it.deletedTimestamp > THIRTY_DAYS_MS }
+    }
+
     private fun showPhotosTab() {
         isAlbumView = false
+        currentActiveBox = 0
         txtTitle.text = "Photos"
         tabPhotos.setTextColor(resources.getColor(android.R.color.white, null))
         tabAlbums.setTextColor(0xFF888888.toInt())
@@ -246,6 +240,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAlbumsTab() {
         isAlbumView = true
+        currentActiveBox = 0
         txtTitle.text = "Albums"
         tabAlbums.setTextColor(resources.getColor(android.R.color.white, null))
         tabPhotos.setTextColor(0xFF888888.toInt())
@@ -261,6 +256,40 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.notifyDataSetChanged()
     }
 
+    private fun show24HourRecoveryBox() {
+        currentActiveBox = 1
+        isAlbumView = false
+        cleanExpiredItems()
+        txtTitle.text = "24-Hour Express Recovery"
+        fullScreenImageView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+
+        displayList.clear()
+        displayList.addAll(recoveryBox24Hours)
+        galleryAdapter.setAlbumMode(false)
+        galleryAdapter.notifyDataSetChanged()
+
+        Toast.makeText(this, "${recoveryBox24Hours.size} items (Auto-delete in 24h)", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun show30DayRecoveryBox() {
+        currentActiveBox = 2
+        isAlbumView = false
+        cleanExpiredItems()
+        txtTitle.text = "30-Day Trash Box"
+        fullScreenImageView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+
+        displayList.clear()
+        displayList.addAll(recoveryBox30Days)
+        galleryAdapter.setAlbumMode(false)
+        galleryAdapter.notifyDataSetChanged()
+
+        Toast.makeText(this, "${recoveryBox30Days.size} items (Auto-delete in 30d)", Toast.LENGTH_SHORT).show()
+    }
+
     private fun openAlbum(folderName: String) {
         txtTitle.text = folderName
         isAlbumView = false
@@ -274,10 +303,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openFullScreen(uri: String) {
-        currentSelectedUri = uri
         recyclerView.visibility = View.GONE
         fullScreenImageView.visibility = View.VISIBLE
-        fullScreenImageView.colorFilter = null // Filter reset
+        fullScreenImageView.colorFilter = null
         Glide.with(this).load(uri).into(fullScreenImageView)
     }
 
@@ -299,9 +327,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun filterByAITag(query: String) {
-        val matched = allMediaList.filter { item ->
-            item.tags.any { tag -> tag.contains(query) }
-        }
+        val matched = allMediaList.filter { item -> item.tags.any { tag -> tag.contains(query) } }
         if (matched.isEmpty()) {
             Toast.makeText(this, "No matching items found", Toast.LENGTH_SHORT).show()
         } else {
@@ -312,118 +338,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showOptionsMenu() {
-        val options = if (fullScreenImageView.visibility == View.VISIBLE) {
-            arrayOf("Apply Photo Filters", "Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
-        } else {
-            arrayOf("Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
-        }
-
+        val options = arrayOf(
+            "Scan & Explicit Content Detection (AI)",
+            "24-Hour Recovery Box (AI Deleted)",
+            "30-Day Recovery Box (Normal Trash)",
+            "Settings",
+            "About"
+        )
         AlertDialog.Builder(this)
             .setTitle("Menu Options")
             .setItems(options) { _, which ->
-                if (fullScreenImageView.visibility == View.VISIBLE) {
-                    when (which) {
-                        0 -> showPhotoFilterDialog()
-                        1 -> runAISafetyScanAndDelete()
-                        2 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
-                        3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    when (which) {
-                        0 -> runAISafetyScanAndDelete()
-                        1 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
-                        2 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
-                    }
+                when (which) {
+                    0 -> runAISafetyScanAndDelete()
+                    1 -> show24HourRecoveryBox()
+                    2 -> show30DayRecoveryBox()
+                    3 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
+                    4 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
-    }
-
-    private fun showPhotoFilterDialog() {
-        val filterNames = arrayOf("Normal / Reset", "Black & White (Grayscale)", "Sepia (Vintage)", "Invert Colors", "High Contrast")
-        AlertDialog.Builder(this)
-            .setTitle("Select Photo Filter")
-            .setItems(filterNames) { _, index ->
-                when (index) {
-                    0 -> fullScreenImageView.colorFilter = null
-                    1 -> applyGrayscaleFilter()
-                    2 -> applySepiaFilter()
-                    3 -> applyInvertFilter()
-                    4 -> applyHighContrastFilter()
-                }
-            }
-            .show()
-    }
-
-    private fun applyGrayscaleFilter() {
-        val matrix = ColorMatrix().apply { setSaturation(0f) }
-        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
-    }
-
-    private fun applySepiaFilter() {
-        val matrix = ColorMatrix()
-        matrix.set(floatArrayOf(
-            0.393f, 0.769f, 0.189f, 0f, 0f,
-            0.349f, 0.686f, 0.168f, 0f, 0f,
-            0.272f, 0.534f, 0.131f, 0f, 0f,
-            0f, 0f, 0f, 1f, 0f
-        ))
-        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
-    }
-
-    private fun applyInvertFilter() {
-        val matrix = ColorMatrix(floatArrayOf(
-            -1f, 0f, 0f, 0f, 255f,
-            0f, -1f, 0f, 0f, 255f,
-            0f, 0f, -1f, 0f, 255f,
-            0f, 0f, 0f, 1f, 0f
-        ))
-        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
-    }
-
-    private fun applyHighContrastFilter() {
-        val matrix = ColorMatrix(floatArrayOf(
-            2f, 0f, 0f, 0f, -100f,
-            0f, 2f, 0f, 0f, -100f,
-            0f, 0f, 2f, 0f, -100f,
-            0f, 0f, 0f, 1f, 0f
-        ))
-        fullScreenImageView.colorFilter = ColorMatrixColorFilter(matrix)
     }
 
     private fun runAISafetyScanAndDelete() {
-        Toast.makeText(this, "AI Deep Scanning (Checking 1-min mark in Videos)...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "AI Scanning Started...", Toast.LENGTH_SHORT).show()
 
-        val itemsToDelete = mutableListOf<MediaItem>()
+        val itemsToRemove = mutableListOf<MediaItem>()
+        val currentTimestamp = System.currentTimeMillis()
 
         allMediaList.forEach { item ->
             val uri = Uri.parse(item.uri)
-
             if (item.isVideo) {
-                val isSensitiveVideo = scanVideoAtOneMinute(uri)
-                if (isSensitiveVideo) {
-                    itemsToDelete.add(item)
+                if (scanVideoAtOneMinute(uri)) {
+                    item.deletedTimestamp = currentTimestamp
+                    itemsToRemove.add(item)
                 }
             } else {
                 AIScannerHelper.scanImageForSafetyAndTags(this, uri) { isSensitive, tags ->
                     item.tags = tags
                     if (isSensitive) {
-                        itemsToDelete.add(item)
+                        item.deletedTimestamp = currentTimestamp
+                        itemsToRemove.add(item)
                     }
                 }
             }
         }
 
-        if (itemsToDelete.isNotEmpty()) {
-            itemsToDelete.forEach { item ->
-                try {
-                    contentResolver.delete(Uri.parse(item.uri), null, null)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            allMediaList.removeAll(itemsToDelete)
-            Toast.makeText(this, "AI Cleaned ${itemsToDelete.size} explicit items!", Toast.LENGTH_LONG).show()
+        if (itemsToRemove.isNotEmpty()) {
+            // Sent to 24-Hour Express Box for auto-deletion
+            recoveryBox24Hours.addAll(itemsToRemove)
+            allMediaList.removeAll(itemsToRemove)
+            Toast.makeText(this, "Moved ${itemsToRemove.size} explicit items to 24-Hour Box!", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(this, "Gallery is Safe. No explicit media found.", Toast.LENGTH_SHORT).show()
         }
@@ -431,12 +395,31 @@ class MainActivity : AppCompatActivity() {
         showPhotosTab()
     }
 
+    private fun showRestoreDialog(item: MediaItem, is24HourBox: Boolean) {
+        val boxName = if (is24HourBox) "24-Hour Box" else "30-Day Trash"
+        AlertDialog.Builder(this)
+            .setTitle(boxName)
+            .setMessage("Do you want to restore this item back to Gallery or Delete it now?")
+            .setPositiveButton("Restore") { _, _ ->
+                if (is24HourBox) recoveryBox24Hours.remove(item) else recoveryBox30Days.remove(item)
+                allMediaList.add(0, item)
+                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
+                Toast.makeText(this, "Item restored back to Gallery!", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Delete Permanently") { _, _ ->
+                if (is24HourBox) recoveryBox24Hours.remove(item) else recoveryBox30Days.remove(item)
+                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
+                Toast.makeText(this, "Item deleted permanently.", Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton("Cancel", null)
+            .show()
+    }
+
     private fun scanVideoAtOneMinute(videoUri: Uri): Boolean {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(this, videoUri)
             val frameBitmap = retriever.getFrameAtTime(60_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            
             var isExplicit = false
             if (frameBitmap != null) {
                 AIScannerHelper.scanBitmapForSafety(frameBitmap) { sensitive ->
@@ -455,18 +438,14 @@ class MainActivity : AppCompatActivity() {
         if (fullScreenImageView.visibility == View.VISIBLE) {
             fullScreenImageView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
-        } else if (txtTitle.text != "Photos" && txtTitle.text != "Albums") {
-            showAlbumsTab()
+        } else if (currentActiveBox != 0 || (txtTitle.text != "Photos" && txtTitle.text != "Albums")) {
+            showPhotosTab()
         } else {
             super.onBackPressed()
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMediaFromStorage()
