@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         if (allMediaList.isEmpty()) {
             Toast.makeText(this, "No media found on device!", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.LoadedCount(this, "Loaded ${allMediaList.size} media items")
+            Toast.makeText(this, "Loaded ${allMediaList.size} media items", Toast.LENGTH_SHORT).show()
         }
 
         showPhotosTab()
