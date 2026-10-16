@@ -37,7 +37,7 @@
             android:layout_height="36dp"
             android:layout_marginStart="12dp"
             android:padding="6dp"
-            android:src="@android:drawable/ic_menu_moreoverflow"
+            android:src="@android:drawable/ic_menu_manage"
             android:contentDescription="Menu" />
     </LinearLayout>
 
@@ -47,49 +47,89 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/topBar"
-        android:layout_above="@id/bottomTabs" />
+        android:layout_above="@id/bottomActionLayout" />
 
-    <!-- Full Screen Zoom View (PhotoView) -->
+    <!-- Full Screen Zoom & Editor View -->
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/fullScreenImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/topBar"
-        android:layout_above="@id/bottomTabs"
+        android:layout_above="@id/bottomActionLayout"
         android:visibility="gone"
         android:background="@android:color/black" />
 
-    <!-- Bottom Tabs -->
+    <!-- Batch Selection / Single Photo Action Bar -->
     <LinearLayout
-        android:id="@+id/bottomTabs"
+        android:id="@+id/bottomActionLayout"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
         android:gravity="center"
-        android:background="#111111">
+        android:background="#111111"
+        android:paddingHorizontal="8dp">
 
-        <TextView
-            android:id="@+id/tabPhotos"
-            android:layout_width="0dp"
+        <!-- Normal Tabs (Photos / Albums) -->
+        <LinearLayout
+            android:id="@+id/normalTabsLayout"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="Photos"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center">
 
-        <TextView
-            android:id="@+id/tabAlbums"
-            android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tabPhotos"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Photos"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tabAlbums"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Albums"
+                android:textColor="#888888"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Multi-Select Action Bar (Hidden by default) -->
+        <LinearLayout
+            android:id="@+id/batchActionLayout"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:text="Albums"
-            android:textColor="#888888"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btnBatchDelete"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                android:text="Delete Selected"
+                android:backgroundTint="#AA0000"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/btnBatchCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="4dp"
+                android:text="Cancel"
+                android:backgroundTint="#444444"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>
