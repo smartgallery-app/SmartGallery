@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +30,7 @@ data class MediaItem(
     val id: Long,
     val uri: String,
     val folderName: String,
+    val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
     var tags: List<String> = emptyList()
 )
@@ -150,9 +152,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadMediaFromStorage() {
         allMediaList.clear()
 
-        // 1. Load Images
         loadImages()
-        // 2. Load Videos
         loadVideos()
 
         if (allMediaList.isEmpty()) {
@@ -188,7 +188,7 @@ class MainActivity : AppCompatActivity() {
                     val id = c.getLong(idCol)
                     val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Pictures" else "Pictures"
                     val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    allMediaList.add(MediaItem(id, uri, folder))
+                    allMediaList.add(MediaItem(id, uri, folder, isVideo = false))
                 }
             }
         }
@@ -218,7 +218,7 @@ class MainActivity : AppCompatActivity() {
                     val id = c.getLong(idCol)
                     val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Videos" else "Videos"
                     val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    allMediaList.add(MediaItem(id, uri, folder))
+                    allMediaList.add(MediaItem(id, uri, folder, isVideo = true))
                 }
             }
         }
@@ -234,9 +234,8 @@ class MainActivity : AppCompatActivity() {
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        val cleanList = allMediaList.filter { !it.isSensitive }
         displayList.clear()
-        displayList.addAll(cleanList)
+        displayList.addAll(allMediaList)
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
     }
@@ -251,7 +250,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 2)
 
-        val uniqueFolders = allMediaList.filter { !it.isSensitive }.distinctBy { it.folderName }
+        val uniqueFolders = allMediaList.distinctBy { it.folderName }
         displayList.clear()
         displayList.addAll(uniqueFolders)
         galleryAdapter.setAlbumMode(true)
@@ -263,7 +262,7 @@ class MainActivity : AppCompatActivity() {
         isAlbumView = false
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        val folderItems = allMediaList.filter { it.folderName == folderName && !it.isSensitive }
+        val folderItems = allMediaList.filter { it.folderName == folderName }
         displayList.clear()
         displayList.addAll(folderItems)
         galleryAdapter.setAlbumMode(false)
@@ -279,7 +278,7 @@ class MainActivity : AppCompatActivity() {
     private fun showAISearchDialog() {
         val input = EditText(this)
         input.hint = "Search by object, tag..."
-        
+
         AlertDialog.Builder(this)
             .setTitle("AI Smart Search")
             .setView(input)
@@ -298,7 +297,7 @@ class MainActivity : AppCompatActivity() {
             item.tags.any { tag -> tag.contains(query) }
         }
         if (matched.isEmpty()) {
-            Toast.makeText(this, "No matching images found", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No matching items found", Toast.LENGTH_SHORT).show()
         } else {
             displayList.clear()
             displayList.addAll(matched)
@@ -307,12 +306,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showOptionsMenu() {
-        val options = arrayOf("Scan & Hide Explicit Content (AI)", "Settings", "About")
+        val options = arrayOf("Scan & Auto Delete Explicit Content (AI)", "Settings", "About")
         AlertDialog.Builder(this)
             .setTitle("Menu Options")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> runAISafetyScan()
+                    0 -> runAISafetyScanAndDelete()
                     1 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
                     2 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
@@ -320,20 +319,69 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun runAISafetyScan() {
-        Toast.makeText(this, "AI Safety Scanning Started...", Toast.LENGTH_SHORT).show()
+    private fun runAISafetyScanAndDelete() {
+        Toast.makeText(this, "AI Deep Scanning (Checking 1-min mark in Videos)...", Toast.LENGTH_SHORT).show()
+
+        val itemsToDelete = mutableListOf<MediaItem>()
 
         allMediaList.forEach { item ->
-            AIScannerHelper.scanImageForSafetyAndTags(this, Uri.parse(item.uri)) { isSensitive, tags ->
-                item.tags = tags
-                if (isSensitive) {
-                    item.isSensitive = true
+            val uri = Uri.parse(item.uri)
+
+            if (item.isVideo) {
+                // Video Logic: Extract frame at 60 seconds (1 minute mark)
+                val isSensitiveVideo = scanVideoAtOneMinute(uri)
+                if (isSensitiveVideo) {
+                    itemsToDelete.add(item)
+                }
+            } else {
+                // Image Logic
+                AIScannerHelper.scanImageForSafetyAndTags(this, uri) { isSensitive, tags ->
+                    item.tags = tags
+                    if (isSensitive) {
+                        itemsToDelete.add(item)
+                    }
                 }
             }
         }
 
-        Toast.makeText(this, "AI Scan Completed. Sensitive items isolated.", Toast.LENGTH_LONG).show()
+        if (itemsToDelete.isNotEmpty()) {
+            itemsToDelete.forEach { item ->
+                try {
+                    contentResolver.delete(Uri.parse(item.uri), null, null)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            allMediaList.removeAll(itemsToDelete)
+            Toast.makeText(this, "AI Cleaned ${itemsToDelete.size} explicit items!", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Gallery is Safe. No explicit media found.", Toast.LENGTH_SHORT).show()
+        }
+
         showPhotosTab()
+    }
+
+    // Video ke 60th second par frame nikal kar check karne ka logic
+    private fun scanVideoAtOneMinute(videoUri: Uri): Boolean {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(this, videoUri)
+            // 60 seconds = 60,000,000 microseconds
+            val frameBitmap = retriever.getFrameAtTime(60_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            
+            var isExplicit = false
+            if (frameBitmap != null) {
+                // Bitmap ko AI Scanner se scan karwa rahe hain
+                AIScannerHelper.scanBitmapForSafety(frameBitmap) { sensitive ->
+                    isExplicit = sensitive
+                }
+            }
+            isExplicit
+        } catch (e: Exception) {
+            false
+        } finally {
+            retriever.release()
+        }
     }
 
     override fun onBackPressed() {
