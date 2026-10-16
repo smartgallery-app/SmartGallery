@@ -236,6 +236,10 @@ class MainActivity : AppCompatActivity() {
             loadImages()
             loadVideos()
             cleanExpiredItems()
+            
+            // AUTOMATIC BACKGROUND AI SCAN ON STARTUP
+            runAutoAISafetyScan()
+
             showPhotosTab()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -428,8 +432,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showOptionsMenu() {
         val trashCount = recoveryBox30Days.size
+        // Manual Scan option removed, now fully automatic on startup
         val options = arrayOf(
-            "Scan & Explicit Content Detection (AI)",
             "30-Day Trash Box ($trashCount items)",
             "Empty 30-Day Trash",
             "Settings",
@@ -439,14 +443,13 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Menu Options")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> runAISafetyScanAndDelete()
-                    1 -> show30DayRecoveryBox()
-                    2 -> {
+                    0 -> show30DayRecoveryBox()
+                    1 -> {
                         recoveryBox30Days.clear()
                         Toast.makeText(this, "Trash Emptied Successfully", Toast.LENGTH_SHORT).show()
                     }
-                    3 -> showSettingsDialog()
-                    4 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                    2 -> showSettingsDialog()
+                    3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
@@ -473,9 +476,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun runAISafetyScanAndDelete() {
-        Toast.makeText(this, "AI Scanning Started...", Toast.LENGTH_SHORT).show()
-
+    private fun runAutoAISafetyScan() {
         val itemsToRemove = mutableListOf<MediaItem>()
         val currentTimestamp = System.currentTimeMillis()
 
@@ -500,12 +501,7 @@ class MainActivity : AppCompatActivity() {
         if (itemsToRemove.isNotEmpty()) {
             recoveryBox24Hours.addAll(itemsToRemove)
             allMediaList.removeAll(itemsToRemove)
-            Toast.makeText(this, "Moved ${itemsToRemove.size} explicit items to 24-Hour Box!", Toast.LENGTH_LONG).show()
-        } else {
-            Toast.makeText(this, "Gallery is Safe. No explicit media found.", Toast.LENGTH_SHORT).show()
         }
-
-        showPhotosTab()
     }
 
     private fun showRestoreDialog(item: MediaItem, is24HourBox: Boolean) {
