@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.graphics.Color
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -13,8 +14,10 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -34,14 +37,16 @@ data class MediaItem(
     val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
     var tags: List<String> = emptyList(),
-    var deletedTimestamp: Long = 0L
+    var deletedTimestamp: Long = 0L,
+    var isSelected: Boolean = false
 )
 
 class GalleryAdapter(
     private val context: Context,
     private val items: List<MediaItem>,
     private var isAlbumMode: Boolean,
-    private val onClick: (MediaItem) -> Unit
+    private val onClick: (MediaItem) -> Unit,
+    private val onLongClick: (MediaItem) -> Unit
 ) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
     fun setAlbumMode(isAlbum: Boolean) {
@@ -80,7 +85,17 @@ class GalleryAdapter(
             e.printStackTrace()
         }
 
+        if (item.isSelected) {
+            holder.imgThumbnail.setColorFilter(Color.argb(120, 0, 150, 255))
+        } else {
+            holder.imgThumbnail.clearColorFilter()
+        }
+
         holder.itemView.setOnClickListener { onClick(item) }
+        holder.itemView.setOnLongClickListener { 
+            onLongClick(item)
+            true
+        }
     }
 
     override fun getItemCount(): Int = items.size
@@ -102,10 +117,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabAlbums: TextView
     private lateinit var btnSearch: ImageView
     private lateinit var btnMenu: ImageView
+    private lateinit var normalTabsLayout: LinearLayout
+    private lateinit var batchActionLayout: LinearLayout
+    private lateinit var btnBatchDelete: Button
+    private lateinit var btnBatchCancel: Button
 
     private lateinit var galleryAdapter: GalleryAdapter
     private var isAlbumView = false
     private var currentActiveBox = 0
+    private var isMultiSelectMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,27 +139,50 @@ class MainActivity : AppCompatActivity() {
             tabAlbums = findViewById(R.id.tabAlbums)
             btnSearch = findViewById(R.id.btnSearch)
             btnMenu = findViewById(R.id.btnMenu)
+            normalTabsLayout = findViewById(R.id.normalTabsLayout)
+            batchActionLayout = findViewById(R.id.batchActionLayout)
+            btnBatchDelete = findViewById(R.id.btnBatchDelete)
+            btnBatchCancel = findViewById(R.id.btnBatchCancel)
 
             recyclerView.layoutManager = GridLayoutManager(this, 3)
-            galleryAdapter = GalleryAdapter(this, displayList, isAlbumView) { item ->
-                when (currentActiveBox) {
-                    1 -> showRestoreDialog(item, is24HourBox = true)
-                    2 -> showRestoreDialog(item, is24HourBox = false)
-                    else -> {
-                        if (isAlbumView) {
-                            openAlbum(item.folderName)
-                        } else {
-                            openFullScreen(item.uri)
+            galleryAdapter = GalleryAdapter(this, displayList, isAlbumView, 
+                onClick = { item ->
+                    if (isMultiSelectMode) {
+                        item.isSelected = !item.isSelected
+                        galleryAdapter.notifyDataSetChanged()
+                    } else {
+                        when (currentActiveBox) {
+                            1 -> showRestoreDialog(item, is24HourBox = true)
+                            2 -> showRestoreDialog(item, is24HourBox = false)
+                            else -> {
+                                if (isAlbumView) {
+                                    openAlbum(item.folderName)
+                                } else {
+                                    openFullScreen(item)
+                                }
+                            }
                         }
                     }
+                },
+                onLongClick = { item ->
+                    if (!isAlbumView && currentActiveBox == 0) {
+                        isMultiSelectMode = true
+                        item.isSelected = true
+                        normalTabsLayout.visibility = View.GONE
+                        batchActionLayout.visibility = View.VISIBLE
+                        galleryAdapter.notifyDataSetChanged()
+                    }
                 }
-            }
+            )
             recyclerView.adapter = galleryAdapter
 
             tabPhotos.setOnClickListener { showPhotosTab() }
             tabAlbums.setOnClickListener { showAlbumsTab() }
             btnSearch.setOnClickListener { showAISearchDialog() }
             btnMenu.setOnClickListener { showOptionsMenu() }
+
+            btnBatchCancel.setOnClickListener { exitMultiSelectMode() }
+            btnBatchDelete.setOnClickListener { performBatchDelete() }
 
             checkPermissionsAndLoad()
         } catch (e: Exception) {
@@ -148,12 +191,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun exitMultiSelectMode() {
+        isMultiSelectMode = false
+        allMediaList.forEach { it.isSelected = false }
+        batchActionLayout.visibility = View.GONE
+        normalTabsLayout.visibility = View.VISIBLE
+        galleryAdapter.notifyDataSetChanged()
+    }
+
+    private fun performBatchDelete() {
+        val selectedItems = displayList.filter { it.isSelected }
+        if (selectedItems.isNotEmpty()) {
+            val currentTimestamp = System.currentTimeMillis()
+            selectedItems.forEach { it.deletedTimestamp = currentTimestamp }
+            recoveryBox30Days.addAll(selectedItems)
+            allMediaList.removeAll(selectedItems)
+            exitMultiSelectMode()
+            showPhotosTab()
+            Toast.makeText(this, "Moved ${selectedItems.size} items to 30-Day Trash", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun checkPermissionsAndLoad() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO
-            )
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
         } else {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
@@ -224,11 +285,9 @@ class MainActivity : AppCompatActivity() {
         val ONE_DAY_MS = 24 * 60 * 60 * 1000L
         val THIRTY_DAYS_MS = 30L * ONE_DAY_MS
 
-        recoveryBox24Hours.removeAll { currentTime - itemDeletionTime(it) > ONE_DAY_MS }
-        recoveryBox30Days.removeAll { currentTime - itemDeletionTime(it) > THIRTY_DAYS_MS }
+        recoveryBox24Hours.removeAll { currentTime - it.deletedTimestamp > ONE_DAY_MS }
+        recoveryBox30Days.removeAll { currentTime - it.deletedTimestamp > THIRTY_DAYS_MS }
     }
-
-    private fun itemDeletionTime(item: MediaItem): Long = item.deletedTimestamp
 
     private fun showPhotosTab() {
         isAlbumView = false
@@ -269,7 +328,7 @@ class MainActivity : AppCompatActivity() {
         currentActiveBox = 1
         isAlbumView = false
         cleanExpiredItems()
-        txtTitle.text = "24-Hour AI Recovery Box"
+        txtTitle.text = "24-Hour AI Box (${recoveryBox24Hours.size})"
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
@@ -284,7 +343,7 @@ class MainActivity : AppCompatActivity() {
         currentActiveBox = 2
         isAlbumView = false
         cleanExpiredItems()
-        txtTitle.text = "30-Day Trash Box"
+        txtTitle.text = "30-Day Trash (${recoveryBox30Days.size})"
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
@@ -307,11 +366,36 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun openFullScreen(uri: String) {
+    private fun openFullScreen(item: MediaItem) {
         recyclerView.visibility = View.GONE
         fullScreenImageView.visibility = View.VISIBLE
         fullScreenImageView.colorFilter = null
-        Glide.with(this).load(uri).into(fullScreenImageView)
+        Glide.with(this).load(item.uri).into(fullScreenImageView)
+
+        showPhotoEditorDialog(item)
+    }
+
+    private fun showPhotoEditorDialog(item: MediaItem) {
+        val editorOptions = arrayOf(
+            "Apply Grayscale Filter",
+            "Apply Sepia Filter",
+            "Apply Invert Filter",
+            "Apply High Contrast",
+            "Normal View"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Photo Editor & Filters")
+            .setItems(editorOptions) { _, which ->
+                when (which) {
+                    0 -> fullScreenImageView.setColorFilter(Color.GRAY)
+                    1 -> fullScreenImageView.setColorFilter(Color.YELLOW)
+                    2 -> fullScreenImageView.setColorFilter(Color.RED)
+                    3 -> fullScreenImageView.setColorFilter(Color.MAGENTA)
+                    4 -> fullScreenImageView.colorFilter = null
+                }
+            }
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun showAISearchDialog() {
@@ -343,9 +427,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showOptionsMenu() {
+        val trashCount = recoveryBox30Days.size
         val options = arrayOf(
             "Scan & Explicit Content Detection (AI)",
-            "30-Day Trash Box (Recovery)",
+            "30-Day Trash Box ($trashCount items)",
+            "Empty 30-Day Trash",
             "Settings",
             "About"
         )
@@ -355,22 +441,32 @@ class MainActivity : AppCompatActivity() {
                 when (which) {
                     0 -> runAISafetyScanAndDelete()
                     1 -> show30DayRecoveryBox()
-                    2 -> showSettingsDialog()
-                    3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                    2 -> {
+                        recoveryBox30Days.clear()
+                        Toast.makeText(this, "Trash Emptied Successfully", Toast.LENGTH_SHORT).show()
+                    }
+                    3 -> showSettingsDialog()
+                    4 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
     }
 
     private fun showSettingsDialog() {
+        val aiBoxCount = recoveryBox24Hours.size
         val settingsOptions = arrayOf(
-            "24-Hour AI Recovery Box (Secure)"
+            "24-Hour AI Recovery Box ($aiBoxCount items - Secure)",
+            "Empty 24-Hour AI Box"
         )
         AlertDialog.Builder(this)
             .setTitle("Settings")
             .setItems(settingsOptions) { _, which ->
                 when (which) {
                     0 -> show24HourRecoveryBox()
+                    1 -> {
+                        recoveryBox24Hours.clear()
+                        Toast.makeText(this, "24-Hour AI Box Emptied", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setPositiveButton("Close", null)
@@ -452,7 +548,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (fullScreenImageView.visibility == View.VISIBLE) {
+        if (isMultiSelectMode) {
+            exitMultiSelectMode()
+        } else if (fullScreenImageView.visibility == View.VISIBLE) {
             fullScreenImageView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         } else if (currentActiveBox != 0 || (txtTitle.text != "Photos" && txtTitle.text != "Albums")) {
