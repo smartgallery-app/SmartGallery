@@ -149,6 +149,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadMediaFromStorage() {
         allMediaList.clear()
+
+        // 1. Load Images
+        loadImages()
+        // 2. Load Videos
+        loadVideos()
+
+        if (allMediaList.isEmpty()) {
+            Toast.makeText(this, "No media found on device!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.LoadedCount(this, "Loaded ${allMediaList.size} media items")
+        }
+
+        showPhotosTab()
+    }
+
+    private fun loadImages() {
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.BUCKET_DISPLAY_NAME
@@ -164,18 +180,48 @@ class MainActivity : AppCompatActivity() {
         )
 
         cursor?.use { c ->
-            val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val bucketCol = c.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+            val idCol = c.getColumnIndex(MediaStore.Images.Media._ID)
+            val bucketCol = c.getColumnIndex(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
-            while (c.moveToNext()) {
-                val id = c.getLong(idCol)
-                val folder = c.getString(bucketCol) ?: "Internal"
-                val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                allMediaList.add(MediaItem(id, uri, folder))
+            if (idCol != -1) {
+                while (c.moveToNext()) {
+                    val id = c.getLong(idCol)
+                    val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Pictures" else "Pictures"
+                    val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
+                    allMediaList.add(MediaItem(id, uri, folder))
+                }
             }
         }
+    }
 
-        showPhotosTab()
+    private fun loadVideos() {
+        val projection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME
+        )
+        val sortOrder = "${MediaStore.Video.Media.DATE_MODIFIED} DESC"
+
+        val cursor: Cursor? = contentResolver.query(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            null,
+            null,
+            sortOrder
+        )
+
+        cursor?.use { c ->
+            val idCol = c.getColumnIndex(MediaStore.Video.Media._ID)
+            val bucketCol = c.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+
+            if (idCol != -1) {
+                while (c.moveToNext()) {
+                    val id = c.getLong(idCol)
+                    val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Videos" else "Videos"
+                    val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id).toString()
+                    allMediaList.add(MediaItem(id, uri, folder))
+                }
+            }
+        }
     }
 
     private fun showPhotosTab() {
@@ -298,6 +344,19 @@ class MainActivity : AppCompatActivity() {
             showAlbumsTab()
         } else {
             super.onBackPressed()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            loadMediaFromStorage()
+        } else {
+            Toast.makeText(this, "Storage Permission Denied!", Toast.LENGTH_SHORT).show()
         }
     }
 }
