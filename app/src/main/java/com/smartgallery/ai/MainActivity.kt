@@ -71,10 +71,14 @@ class GalleryAdapter(
             holder.txtItemCount.visibility = View.GONE
         }
 
-        Glide.with(context)
-            .load(item.uri)
-            .centerCrop()
-            .into(holder.imgThumbnail)
+        try {
+            Glide.with(context)
+                .load(item.uri)
+                .centerCrop()
+                .into(holder.imgThumbnail)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         holder.itemView.setOnClickListener { onClick(item) }
     }
@@ -105,39 +109,43 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            setContentView(R.layout.activity_main)
 
-        recyclerView = findViewById(R.id.recyclerView)
-        fullScreenImageView = findViewById(R.id.fullScreenImageView)
-        txtTitle = findViewById(R.id.txtTitle)
-        tabPhotos = findViewById(R.id.tabPhotos)
-        tabAlbums = findViewById(R.id.tabAlbums)
-        btnSearch = findViewById(R.id.btnSearch)
-        btnMenu = findViewById(R.id.btnMenu)
+            recyclerView = findViewById(R.id.recyclerView)
+            fullScreenImageView = findViewById(R.id.fullScreenImageView)
+            txtTitle = findViewById(R.id.txtTitle)
+            tabPhotos = findViewById(R.id.tabPhotos)
+            tabAlbums = findViewById(R.id.tabAlbums)
+            btnSearch = findViewById(R.id.btnSearch)
+            btnMenu = findViewById(R.id.btnMenu)
 
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
-        galleryAdapter = GalleryAdapter(this, displayList, isAlbumView) { item ->
-            when (currentActiveBox) {
-                1 -> showRestoreDialog(item, is24HourBox = true)
-                2 -> showRestoreDialog(item, is24HourBox = false)
-                else -> {
-                    if (isAlbumView) {
-                        openAlbum(item.folderName)
-                    } else {
-                        openFullScreen(item.uri)
+            recyclerView.layoutManager = GridLayoutManager(this, 3)
+            galleryAdapter = GalleryAdapter(this, displayList, isAlbumView) { item ->
+                when (currentActiveBox) {
+                    1 -> showRestoreDialog(item, is24HourBox = true)
+                    2 -> showRestoreDialog(item, is24HourBox = false)
+                    else -> {
+                        if (isAlbumView) {
+                            openAlbum(item.folderName)
+                        } else {
+                            openFullScreen(item.uri)
+                        }
                     }
                 }
             }
+            recyclerView.adapter = galleryAdapter
+
+            tabPhotos.setOnClickListener { showPhotosTab() }
+            tabAlbums.setOnClickListener { showAlbumsTab() }
+            btnSearch.setOnClickListener { showAISearchDialog() }
+            btnMenu.setOnClickListener { showOptionsMenu() }
+
+            checkPermissionsAndLoad()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Startup Error: ${e.message}", Toast.Status.LONG).show()
         }
-        recyclerView.adapter = galleryAdapter
-
-        tabPhotos.setOnClickListener { showPhotosTab() }
-        tabAlbums.setOnClickListener { showAlbumsTab() }
-
-        btnSearch.setOnClickListener { showAISearchDialog() }
-        btnMenu.setOnClickListener { showOptionsMenu() }
-
-        checkPermissionsAndLoad()
     }
 
     private fun checkPermissionsAndLoad() {
@@ -162,11 +170,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadMediaFromStorage() {
-        allMediaList.clear()
-        loadImages()
-        loadVideos()
-        cleanExpiredItems()
-        showPhotosTab()
+        try {
+            allMediaList.clear()
+            loadImages()
+            loadVideos()
+            cleanExpiredItems()
+            showPhotosTab()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun loadImages() {
@@ -266,8 +278,6 @@ class MainActivity : AppCompatActivity() {
         displayList.addAll(recoveryBox24Hours)
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
-
-        Toast.makeText(this, "${recoveryBox24Hours.size} items in 24h Box", Toast.LENGTH_SHORT).show()
     }
 
     private fun show30DayRecoveryBox() {
@@ -283,8 +293,6 @@ class MainActivity : AppCompatActivity() {
         displayList.addAll(recoveryBox30Days)
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
-
-        Toast.makeText(this, "${recoveryBox30Days.size} items in 30d Trash", Toast.LENGTH_SHORT).show()
     }
 
     private fun openAlbum(folderName: String) {
@@ -334,7 +342,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Main Menu: 30-din wala Trash Box bilkul samne rahega
     private fun showOptionsMenu() {
         val options = arrayOf(
             "Scan & Explicit Content Detection (AI)",
@@ -347,15 +354,14 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> runAISafetyScanAndDelete()
-                    1 -> show30DayRecoveryBox() // Samne wala 30-day trash
-                    2 -> showSettingsDialog()     // Settings jiske andar 24-hour box rahega
+                    1 -> show30DayRecoveryBox()
+                    2 -> showSettingsDialog()
                     3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
     }
 
-    // Settings Dialog: Iske andar 24-ghante wala AI Recovery Box rahega
     private fun showSettingsDialog() {
         val settingsOptions = arrayOf(
             "24-Hour AI Recovery Box (Secure)"
