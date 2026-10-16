@@ -5,15 +5,16 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -25,7 +26,9 @@ import com.smartgallery.app.R
 data class MediaItem(
     val id: Long,
     val uri: String,
-    val folderName: String
+    val folderName: String,
+    var isSensitive: Boolean = false,
+    var tags: List<String> = emptyList()
 )
 
 class MainActivity : AppCompatActivity() {
@@ -70,13 +73,8 @@ class MainActivity : AppCompatActivity() {
         tabPhotos.setOnClickListener { showPhotosTab() }
         tabAlbums.setOnClickListener { showAlbumsTab() }
 
-        btnSearch.setOnClickListener {
-            Toast.makeText(this, "AI Search features loading...", Toast.LENGTH_SHORT).show()
-        }
-
-        btnMenu.setOnClickListener {
-            Toast.makeText(this, "Settings & Options", Toast.LENGTH_SHORT).show()
-        }
+        btnSearch.setOnClickListener { showAISearchDialog() }
+        btnMenu.setOnClickListener { showOptionsMenu() }
 
         checkPermissionsAndLoad()
     }
@@ -143,8 +141,9 @@ class MainActivity : AppCompatActivity() {
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
+        val cleanList = allMediaList.filter { !it.isSensitive }
         displayList.clear()
-        displayList.addAll(allMediaList)
+        displayList.addAll(cleanList)
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
     }
@@ -159,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 2)
 
-        val uniqueFolders = allMediaList.distinctBy { it.folderName }
+        val uniqueFolders = allMediaList.filter { !it.isSensitive }.distinctBy { it.folderName }
         displayList.clear()
         displayList.addAll(uniqueFolders)
         galleryAdapter.setAlbumMode(true)
@@ -171,7 +170,7 @@ class MainActivity : AppCompatActivity() {
         isAlbumView = false
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        val folderItems = allMediaList.filter { it.folderName == folderName }
+        val folderItems = allMediaList.filter { it.folderName == folderName && !it.isSensitive }
         displayList.clear()
         displayList.addAll(folderItems)
         galleryAdapter.setAlbumMode(false)
@@ -184,6 +183,66 @@ class MainActivity : AppCompatActivity() {
         Glide.with(this).load(uri).into(fullScreenImageView)
     }
 
+    private fun showAISearchDialog() {
+        val input = EditText(this)
+        input.hint = "Search by object, food, tag..."
+        
+        AlertDialog.Builder(this)
+            .setTitle("AI Smart Search")
+            .setView(input)
+            .setPositiveButton("Search") { _, _ ->
+                val query = input.text.toString().trim().lowercase()
+                if (query.isNotEmpty()) {
+                    filterByAITag(query)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun filterByAITag(query: String) {
+        val matched = allMediaList.filter { item ->
+            item.tags.any { tag -> tag.contains(query) }
+        }
+        if (matched.isEmpty()) {
+            Toast.makeText(this, "No matching images found", Toast.LENGTH_SHORT).show()
+        } else {
+            displayList.clear()
+            displayList.addAll(matched)
+            galleryAdapter.notifyDataSetChanged()
+        }
+    }
+
+    private fun showOptionsMenu() {
+        val options = arrayOf("Scan & Hide Explicit Content (AI)", "Settings", "About")
+        AlertDialog.Builder(this)
+            .setTitle("Menu Options")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> runAISafetyScan()
+                    1 -> Toast.makeText(this, "Settings Selected", Toast.LENGTH_SHORT).show()
+                    2 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
+    }
+
+    private fun runAISafetyScan() {
+        Toast.makeText(this, "AI Safety Scanning Started...", Toast.LENGTH_SHORT).show()
+
+        allMediaList.forEach { item ->
+            AIScannerHelper.scanImageForSafetyAndTags(this, Uri.parse(item.uri)) { isSensitive, tags ->
+                item.tags = tags
+                if (isSensitive) {
+                    item.isSensitive = true
+                }
+            }
+        }
+
+        Toast.makeText(this, "AI Scan Completed. Sensitive items isolated.", Toast.LENGTH_LONG).show()
+        showPhotosTab()
+    }
+
     override fun onBackPressed() {
         if (fullScreenImageView.visibility == View.VISIBLE) {
             fullScreenImageView.visibility = View.GONE
@@ -194,60 +253,4 @@ class MainActivity : AppCompatActivity() {
             super.onBackPressed()
         }
     }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            loadMediaFromStorage()
-        }
-    }
-}
-
-class GalleryAdapter(
-    private val context: Context,
-    private val items: List<MediaItem>,
-    private var isAlbumMode: Boolean,
-    private val onClick: (MediaItem) -> Unit
-) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
-
-    fun setAlbumMode(isAlbum: Boolean) {
-        this.isAlbumMode = isAlbum
-    }
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgThumbnail: ImageView = view.findViewById(R.id.imgThumbnail)
-        val txtFolderName: TextView = view.findViewById(R.id.txtFolderName)
-        val txtItemCount: TextView = view.findViewById(R.id.txtItemCount)
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.item_folder, parent, false)
-        return ViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
-
-        if (isAlbumMode) {
-            holder.txtFolderName.visibility = View.VISIBLE
-            holder.txtFolderName.text = item.folderName
-            holder.txtItemCount.visibility = View.GONE
-        } else {
-            holder.txtFolderName.visibility = View.GONE
-            holder.txtItemCount.visibility = View.GONE
-        }
-
-        Glide.with(context)
-            .load(item.uri)
-            .centerCrop()
-            .into(holder.imgThumbnail)
-
-        holder.itemView.setOnClickListener { onClick(item) }
-    }
-
-    override fun getItemCount(): Int = items.size
 }
