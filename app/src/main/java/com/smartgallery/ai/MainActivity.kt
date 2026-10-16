@@ -9,7 +9,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -30,6 +32,51 @@ data class MediaItem(
     var isSensitive: Boolean = false,
     var tags: List<String> = emptyList()
 )
+
+class GalleryAdapter(
+    private val context: Context,
+    private val items: List<MediaItem>,
+    private var isAlbumMode: Boolean,
+    private val onClick: (MediaItem) -> Unit
+) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
+
+    fun setAlbumMode(isAlbum: Boolean) {
+        this.isAlbumMode = isAlbum
+    }
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val imgThumbnail: ImageView = view.findViewById(R.id.imgThumbnail)
+        val txtFolderName: TextView = view.findViewById(R.id.txtFolderName)
+        val txtItemCount: TextView = view.findViewById(R.id.txtItemCount)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.item_folder, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = items[position]
+
+        if (isAlbumMode) {
+            holder.txtFolderName.visibility = View.VISIBLE
+            holder.txtFolderName.text = item.folderName
+            holder.txtItemCount.visibility = View.GONE
+        } else {
+            holder.txtFolderName.visibility = View.GONE
+            holder.txtItemCount.visibility = View.GONE
+        }
+
+        Glide.with(context)
+            .load(item.uri)
+            .centerCrop()
+            .into(holder.imgThumbnail)
+
+        holder.itemView.setOnClickListener { onClick(item) }
+    }
+
+    override fun getItemCount(): Int = items.size
+}
 
 class MainActivity : AppCompatActivity() {
 
@@ -185,7 +232,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAISearchDialog() {
         val input = EditText(this)
-        input.hint = "Search by object, food, tag..."
+        input.hint = "Search by object, tag..."
         
         AlertDialog.Builder(this)
             .setTitle("AI Smart Search")
