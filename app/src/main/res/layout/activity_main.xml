@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <!-- Top Header Bar -->
+    <!-- Top Bar -->
     <LinearLayout
-        android:id="@+id/headerBar"
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:orientation="horizontal"
@@ -21,65 +20,61 @@
             android:layout_weight="1"
             android:text="Photos"
             android:textColor="@android:color/white"
-            android:textSize="24sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/btnSearch"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="4dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="6dp"
             android:src="@android:drawable/ic_menu_search"
-            app:tint="@android:color/white" />
+            android:contentDescription="Search" />
 
         <ImageView
             android:id="@+id/btnMenu"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginStart="12dp"
-            android:padding="4dp"
-            android:src="@android:drawable/ic_menu_more"
-            app:tint="@android:color/white" />
+            android:padding="6dp"
+            android:src="@android:drawable/ic_menu_moreoverflow"
+            android:contentDescription="Menu" />
     </LinearLayout>
 
-    <!-- RecyclerView for Photos/Albums -->
+    <!-- Main Content RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/headerBar"
-        android:layout_above="@id/bottomNav"
-        android:padding="2dp"
-        android:clipToPadding="false" />
+        android:layout_below="@id/topBar"
+        android:layout_above="@id/bottomTabs" />
 
-    <!-- Fullscreen Image View -->
-    <ImageView
+    <!-- Full Screen Zoom View (PhotoView) -->
+    <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/fullScreenImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"
+        android:layout_below="@id/topBar"
+        android:layout_above="@id/bottomTabs"
         android:visibility="gone"
         android:background="@android:color/black" />
 
-    <!-- Bottom Navigation Bar (Photos / Albums) -->
+    <!-- Bottom Tabs -->
     <LinearLayout
-        android:id="@+id/bottomNav"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:id="@+id/bottomTabs"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="16dp"
-        android:background="#333333"
         android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="4dp">
+        android:gravity="center"
+        android:background="#111111">
 
         <TextView
             android:id="@+id/tabPhotos"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:gravity="center"
-            android:paddingHorizontal="20dp"
             android:text="Photos"
             android:textColor="@android:color/white"
             android:textSize="16sp"
@@ -87,13 +82,14 @@
 
         <TextView
             android:id="@+id/tabAlbums"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:gravity="center"
-            android:paddingHorizontal="20dp"
             android:text="Albums"
             android:textColor="#888888"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
 </RelativeLayout>
