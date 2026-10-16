@@ -21,21 +21,21 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.smartgallery.app.R
 
-data class MediaItem(
+data class MediaModel(
     val id: Long,
     val uri: String,
-    val bucketName: String
+    val folderName: String
 )
 
 class MainActivity : AppCompatActivity() {
 
     private val PERMISSION_REQUEST_CODE = 101
-    private val allMediaList = mutableListOf<MediaItem>()
-    private val currentDisplayList = mutableListOf<MediaItem>()
-    
+    private val allMediaList = mutableListOf<MediaModel>()
+    private val displayList = mutableListOf<MediaModel>()
+
     private lateinit var recyclerView: RecyclerView
-    private lateinit var galleryAdapter: GalleryAdapter
     private lateinit var fullScreenImageView: ImageView
+    private lateinit var galleryAdapter: GalleryAdapter
 
     private var isFolderView = true
 
@@ -47,15 +47,19 @@ class MainActivity : AppCompatActivity() {
         fullScreenImageView = findViewById(R.id.fullScreenImageView)
 
         recyclerView.layoutManager = GridLayoutManager(this, 2)
-        galleryAdapter = GalleryAdapter(this, currentDisplayList) { item ->
-            onItemClicked(item)
+        galleryAdapter = GalleryAdapter(this, displayList) { item ->
+            if (isFolderView) {
+                openFolder(item.folderName)
+            } else {
+                openFullScreen(item.uri)
+            }
         }
         recyclerView.adapter = galleryAdapter
 
-        checkAndRequestPermissions()
+        checkPermissionsAndLoad()
     }
 
-    private fun checkAndRequestPermissions() {
+    private fun checkPermissionsAndLoad() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
@@ -72,11 +76,11 @@ class MainActivity : AppCompatActivity() {
         if (missing.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, missing.toTypedArray(), PERMISSION_REQUEST_CODE)
         } else {
-            loadAllMedia()
+            loadMediaFromStorage()
         }
     }
 
-    private fun loadAllMedia() {
+    private fun loadMediaFromStorage() {
         allMediaList.clear()
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
@@ -93,50 +97,46 @@ class MainActivity : AppCompatActivity() {
         )
 
         cursor?.use { c ->
-            val idColumn = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val bucketColumn = c.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+            val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val bucketCol = c.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
             while (c.moveToNext()) {
-                val id = c.getLong(idColumn)
-                val bucketName = c.getString(bucketColumn) ?: "Internal"
+                val id = c.getLong(idCol)
+                val folder = c.getString(bucketCol) ?: "Internal"
                 val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                allMediaList.add(MediaItem(id, uri, bucketName))
+                allMediaList.add(MediaModel(id, uri, folder))
             }
         }
 
-        showFolderGrid()
+        showFolders()
     }
 
-    private fun showFolderGrid() {
+    private fun showFolders() {
         isFolderView = true
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
+        recyclerView.layoutManager = GridLayoutManager(this, 2)
 
-        val distinctFolders = allMediaList.distinctBy { it.bucketName }
-        currentDisplayList.clear()
-        currentDisplayList.addAll(distinctFolders)
+        val uniqueFolders = allMediaList.distinctBy { it.folderName }
+        displayList.clear()
+        displayList.addAll(uniqueFolders)
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun showPhotosForFolder(bucketName: String) {
+    private fun openFolder(folderName: String) {
         isFolderView = false
         recyclerView.layoutManager = GridLayoutManager(this, 3)
-        
-        val folderPhotos = allMediaList.filter { it.bucketName == bucketName }
-        currentDisplayList.clear()
-        currentDisplayList.addAll(folderPhotos)
+
+        val folderItems = allMediaList.filter { it.folderName == folderName }
+        displayList.clear()
+        displayList.addAll(folderItems)
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun onItemClicked(item: MediaItem) {
-        if (isFolderView) {
-            showPhotosForFolder(item.bucketName)
-        } else {
-            recyclerView.visibility = View.GONE
-            fullScreenImageView.visibility = View.VISIBLE
-            Glide.with(this).load(item.uri).into(fullScreenImageView)
-        }
+    private fun openFullScreen(uri: String) {
+        recyclerView.visibility = View.GONE
+        fullScreenImageView.visibility = View.VISIBLE
+        Glide.with(this).load(uri).into(fullScreenImageView)
     }
 
     override fun onBackPressed() {
@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
             fullScreenImageView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         } else if (!isFolderView) {
-            showFolderGrid()
+            showFolders()
         } else {
             super.onBackPressed()
         }
@@ -157,21 +157,21 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            loadAllMedia()
+            loadMediaFromStorage()
         }
     }
 }
 
 class GalleryAdapter(
     private val context: Context,
-    private val items: List<MediaItem>,
-    private val onClick: (MediaItem) -> Unit
+    private val items: List<MediaModel>,
+    private val onClick: (MediaModel) -> Unit
 ) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imgThumbnail: ImageView = itemView.findViewById(R.id.imgThumbnail)
-        val txtFolderName: TextView = itemView.findViewById(R.id.txtFolderName)
-        val txtItemCount: TextView = itemView.findViewById(R.id.txtItemCount)
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val imgThumbnail: ImageView = view.findViewById(R.id.imgThumbnail)
+        val txtFolderName: TextView = view.findViewById(R.id.txtFolderName)
+        val txtItemCount: TextView = view.findViewById(R.id.txtItemCount)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -181,7 +181,7 @@ class GalleryAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.txtFolderName.text = item.bucketName
+        holder.txtFolderName.text = item.folderName
         holder.txtItemCount.text = ""
 
         Glide.with(context)
