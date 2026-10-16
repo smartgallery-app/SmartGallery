@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
             checkPermissionsAndLoad()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Startup Error: ${e.message}", Toast.Status.LONG).show()
+            Toast.makeText(this, "Startup Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
