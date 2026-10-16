@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -21,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.smartgallery.app.R
 
-data class MediaModel(
+data class MediaItem(
     val id: Long,
     val uri: String,
     val folderName: String
@@ -30,14 +31,19 @@ data class MediaModel(
 class MainActivity : AppCompatActivity() {
 
     private val PERMISSION_REQUEST_CODE = 101
-    private val allMediaList = mutableListOf<MediaModel>()
-    private val displayList = mutableListOf<MediaModel>()
+    private val allMediaList = mutableListOf<MediaItem>()
+    private val displayList = mutableListOf<MediaItem>()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: ImageView
-    private lateinit var galleryAdapter: GalleryAdapter
+    private lateinit var txtTitle: TextView
+    private lateinit var tabPhotos: TextView
+    private lateinit var tabAlbums: TextView
+    private lateinit var btnSearch: ImageView
+    private lateinit var btnMenu: ImageView
 
-    private var isFolderView = true
+    private lateinit var galleryAdapter: GalleryAdapter
+    private var isAlbumView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,16 +51,32 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recyclerView)
         fullScreenImageView = findViewById(R.id.fullScreenImageView)
+        txtTitle = findViewById(R.id.txtTitle)
+        tabPhotos = findViewById(R.id.tabPhotos)
+        tabAlbums = findViewById(R.id.tabAlbums)
+        btnSearch = findViewById(R.id.btnSearch)
+        btnMenu = findViewById(R.id.btnMenu)
 
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
-        galleryAdapter = GalleryAdapter(this, displayList) { item ->
-            if (isFolderView) {
-                openFolder(item.folderName)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        galleryAdapter = GalleryAdapter(this, displayList, isAlbumView) { item ->
+            if (isAlbumView) {
+                openAlbum(item.folderName)
             } else {
                 openFullScreen(item.uri)
             }
         }
         recyclerView.adapter = galleryAdapter
+
+        tabPhotos.setOnClickListener { showPhotosTab() }
+        tabAlbums.setOnClickListener { showAlbumsTab() }
+
+        btnSearch.setOnClickListener {
+            Toast.makeText(this, "AI Search features loading...", Toast.LENGTH_SHORT).show()
+        }
+
+        btnMenu.setOnClickListener {
+            Toast.makeText(this, "Settings & Options", Toast.LENGTH_SHORT).show()
+        }
 
         checkPermissionsAndLoad()
     }
@@ -104,15 +126,35 @@ class MainActivity : AppCompatActivity() {
                 val id = c.getLong(idCol)
                 val folder = c.getString(bucketCol) ?: "Internal"
                 val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                allMediaList.add(MediaModel(id, uri, folder))
+                allMediaList.add(MediaItem(id, uri, folder))
             }
         }
 
-        showFolders()
+        showPhotosTab()
     }
 
-    private fun showFolders() {
-        isFolderView = true
+    private fun showPhotosTab() {
+        isAlbumView = false
+        txtTitle.text = "Photos"
+        tabPhotos.setTextColor(resources.getColor(android.R.color.white, null))
+        tabAlbums.setTextColor(0xFF888888.toInt())
+
+        fullScreenImageView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+
+        displayList.clear()
+        displayList.addAll(allMediaList)
+        galleryAdapter.setAlbumMode(false)
+        galleryAdapter.notifyDataSetChanged()
+    }
+
+    private fun showAlbumsTab() {
+        isAlbumView = true
+        txtTitle.text = "Albums"
+        tabAlbums.setTextColor(resources.getColor(android.R.color.white, null))
+        tabPhotos.setTextColor(0xFF888888.toInt())
+
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 2)
@@ -120,16 +162,19 @@ class MainActivity : AppCompatActivity() {
         val uniqueFolders = allMediaList.distinctBy { it.folderName }
         displayList.clear()
         displayList.addAll(uniqueFolders)
+        galleryAdapter.setAlbumMode(true)
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun openFolder(folderName: String) {
-        isFolderView = false
+    private fun openAlbum(folderName: String) {
+        txtTitle.text = folderName
+        isAlbumView = false
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         val folderItems = allMediaList.filter { it.folderName == folderName }
         displayList.clear()
         displayList.addAll(folderItems)
+        galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
     }
 
@@ -143,8 +188,8 @@ class MainActivity : AppCompatActivity() {
         if (fullScreenImageView.visibility == View.VISIBLE) {
             fullScreenImageView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
-        } else if (!isFolderView) {
-            showFolders()
+        } else if (txtTitle.text != "Photos" && txtTitle.text != "Albums") {
+            showAlbumsTab()
         } else {
             super.onBackPressed()
         }
@@ -164,9 +209,14 @@ class MainActivity : AppCompatActivity() {
 
 class GalleryAdapter(
     private val context: Context,
-    private val items: List<MediaModel>,
-    private val onClick: (MediaModel) -> Unit
+    private val items: List<MediaItem>,
+    private var isAlbumMode: Boolean,
+    private val onClick: (MediaItem) -> Unit
 ) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
+
+    fun setAlbumMode(isAlbum: Boolean) {
+        this.isAlbumMode = isAlbum
+    }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imgThumbnail: ImageView = view.findViewById(R.id.imgThumbnail)
@@ -181,8 +231,15 @@ class GalleryAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.txtFolderName.text = item.folderName
-        holder.txtItemCount.text = ""
+
+        if (isAlbumMode) {
+            holder.txtFolderName.visibility = View.VISIBLE
+            holder.txtFolderName.text = item.folderName
+            holder.txtItemCount.visibility = View.GONE
+        } else {
+            holder.txtFolderName.visibility = View.GONE
+            holder.txtItemCount.visibility = View.GONE
+        }
 
         Glide.with(context)
             .load(item.uri)
