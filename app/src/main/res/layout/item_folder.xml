@@ -3,12 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="4dp">
 
     <ImageView
         android:id="@+id/imgThumbnail"
         android:layout_width="match_parent"
-        android:layout_height="140dp"
+        android:layout_height="120dp"
         android:scaleType="centerCrop"
         android:background="#222222" />
 
@@ -17,16 +17,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@android:color/white"
-        android:textSize="14sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:maxLines="1"
-        android:layout_marginTop="4dp" />
+        android:layout_marginTop="2dp" />
 
     <TextView
         android:id="@+id/txtItemCount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="#AAAAAA"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
 </LinearLayout>
