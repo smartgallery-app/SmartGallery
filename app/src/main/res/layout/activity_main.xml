@@ -101,7 +101,7 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Multi-Select Action Bar (Hidden by default) -->
+        <!-- Multi-Select Action Bar -->
         <LinearLayout
             android:id="@+id/batchActionLayout"
             android:layout_width="match_parent"
