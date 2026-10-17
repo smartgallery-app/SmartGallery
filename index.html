@@ -3,163 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Gallery AI - Download App</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Smart Gallery AI - Automated Privacy & Protection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #050814;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 700px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .badge {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+        h1 span {
+            color: #3b82f6;
+        }
+        p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+            text-align: left;
+        }
+        .feature-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #e5e7eb;
+        }
+        .feature-item strong {
+            display: block;
+            color: #3b82f6;
+            margin-bottom: 4px;
+        }
+        .btn {
+            background-color: #2563eb;
+            color: white;
+            padding: 16px 36px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+        .btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        }
+        .footer-note {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-white font-sans antialiased selection:bg-blue-600 selection:text-white">
-
-    <!-- Header Section -->
-    <header class="max-w-6xl mx-auto px-6 py-8 flex justify-between items-center border-b border-slate-900">
-        <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2.5 rounded-xl font-bold text-xl shadow-lg shadow-blue-600/30">🛡️</div>
-            <div>
-                <span class="text-xl font-bold tracking-wide block">Smart Gallery AI</span>
-                <span class="text-xs text-slate-500 font-medium">Automated Privacy & Protection</span>
-            </div>
-        </div>
-        <!-- Direct Download Trigger -->
-        <a href="./app-release.apk" onclick="trackDownloadOnly(event)" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-full font-medium transition shadow-lg shadow-blue-600/30 text-sm">Download APK</a>
-    </header>
-
-    <!-- Hero / Download Section -->
-    <section class="max-w-4xl mx-auto px-6 py-20 text-center">
-        <span class="bg-blue-950/80 text-blue-400 text-xs font-semibold px-4 py-1.5 rounded-full border border-blue-800/60 inline-block mb-4">
-            🚀 100% Real-Time AI Privacy Shield
-        </span>
-        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
-            The Ultimate Smart Gallery with <br><span class="text-blue-500">Automated AI Clean-Up</span>
-        </h1>
-        <p class="text-slate-400 text-base md:text-lg mt-6 max-w-2xl mx-auto leading-relaxed">
-            Automatically scans storage, isolates explicit media into a 12-Hour AI Safety Box, and keeps your gallery clean.
-        </p>
-
-        <!-- Big Direct Download Button -->
-        <div class="mt-10">
-            <a href="./app-release.apk" onclick="trackDownloadOnly(event)" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-10 py-5 rounded-2xl transition inline-flex items-center space-x-3 text-lg shadow-2xl shadow-blue-600/50 cursor-pointer transform hover:-scale-105">
-                <span>📥 Download Smart Gallery APK Now</span>
-            </a>
-            <p id="status-msg" class="text-xs text-emerald-400 mt-4 font-medium h-4"></p>
-            <p class="text-xs text-slate-500 mt-2">Direct secure download. Compatible with Android 8.0 and above.</p>
-        </div>
-    </section>
-
-    <!-- Live Admin Analytics Dashboard Section -->
-    <section class="max-w-5xl mx-auto px-6 py-12 border-t border-slate-900">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div>
-                <h2 class="text-2xl font-bold tracking-tight">📊 Live Admin Safety & Device Telemetry</h2>
-                <p class="text-slate-400 text-xs mt-1">Anonymous counts of explicit items cleaned per device.</p>
-            </div>
-            <span class="text-xs bg-emerald-950/80 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Supabase Connected
-            </span>
-        </div>
-
-        <div class="overflow-x-auto bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-2xl backdrop-blur-sm">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
-                        <th class="py-3 px-4">Device Model / Unique ID</th>
-                        <th class="py-3 px-4">Status</th>
-                        <th class="py-3 px-4">Explicit Items Auto-Cleaned</th>
-                        <th class="py-3 px-4">Last Activity Time</th>
-                    </tr>
-                </thead>
-                <tbody id="analytics-table-body" class="divide-y divide-slate-800/60 text-sm">
-                    <tr>
-                        <td colspan="4" class="py-6 px-4 text-center text-slate-500 font-medium">Loading live database logs...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="text-center py-8 text-slate-600 text-xs border-t border-slate-900 mt-12">
-        &copy; 2026 Smart Gallery AI. All Rights Reserved. Private & Secure.
-    </footer>
-
-    <!-- Script to Handle Direct Download & Silent Tracking -->
-    <script>
-        const SUPABASE_URL = "https://your-supabase-project.supabase.co";
-        const SUPABASE_ANON_KEY = "your-supabase-anon-key";
+<body>
+    <div class="container">
+        <div class="badge">100% Real-Time AI Privacy Shield</div>
+        <h1>The Ultimate Smart Gallery with <span>Automated AI Clean-Up</span></h1>
+        <p>Automatically scans storage, isolates explicit media into a secure 12-Hour AI Safety Box, manages 30-Day Trash, and keeps your gallery lightning fast.</p>
         
-        let supabaseClient = null;
-        if (SUPABASE_URL !== "https://your-supabase-project.supabase.co") {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
+        <div class="features">
+            <div class="feature-item">
+                <strong>🛡️ 12-Hour AI Safety</strong>
+                Background frame scanner locks sensitive media & auto-deletes after 12 hrs.
+            </div>
+            <div class="feature-item">
+                <strong>🗑️ 30-Day Trash Box</strong>
+                Recover deleted photos and videos easily anytime within 30 days.
+            </div>
+            <div class="feature-item">
+                <strong>🚀 Ultra Fast & Clean</strong>
+                Built with Kotlin and Coroutines for smooth performance.
+            </div>
+        </div>
 
-        // Silent background tracking without blocking APK download
-        async function trackDownloadOnly(event) {
-            document.getElementById("status-msg").innerText = "Downloading APK...";
-
-            const userAgent = navigator.userAgent;
-            let deviceType = "Android Device";
-            if (userAgent.includes("Samsung")) deviceType = "Samsung Phone";
-            else if (userAgent.includes("Redmi") || userAgent.includes("Xiaomi")) deviceType = "Redmi / Xiaomi";
-            else if (userAgent.includes("Vivo")) deviceType = "Vivo Phone";
-            else if (userAgent.includes("Oppo")) deviceType = "Oppo Phone";
-
-            const anonymousId = "dl_" + Math.random().toString(36).substring(2, 9);
-
-            if (supabaseClient) {
-                try {
-                    // Send silent ping to Supabase that a user downloaded the app
-                    await supabaseClient.from("devices_analytics").insert([
-                        { device_model: deviceType, device_id: anonymousId }
-                    ]);
-                } catch (err) {
-                    console.error("Telemetry error:", err);
-                }
-            }
-            // The <a> tag's default 'href="./app-release.apk"' will execute immediately, starting the download.
-        }
-
-        // Load admin logs
-        async function loadAdminAnalytics() {
-            const tableBody = document.getElementById("analytics-table-body");
-            
-            if (!supabaseClient) {
-                tableBody.innerHTML = `
-                    <tr class="border-b border-slate-800/60">
-                        <td class="py-4 px-4 font-medium text-slate-200">Samsung Galaxy M32 <span class="text-xs text-slate-500 font-mono block">dev_84f9c2a1</span></td>
-                        <td class="py-4 px-4"><span class="text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-1 rounded-md text-xs">Active</span></td>
-                        <td class="py-4 px-4 text-blue-400 font-bold">12 Items Cleaned</td>
-                        <td class="py-4 px-4 text-slate-400 text-xs">Just Now</td>
-                    </tr>
-                `;
-                return;
-            }
-
-            try {
-                const { data } = await supabaseClient
-                    .from("safety_clean_logs")
-                    .select("*")
-                    .order("cleaned_at", { ascending: false });
-
-                if (data && data.length > 0) {
-                    tableBody.innerHTML = "";
-                    data.forEach(row => {
-                        tableBody.innerHTML += `
-                            <tr class="border-b border-slate-800/60">
-                                <td class="py-3.5 px-4 font-medium text-slate-200">${row.device_model || 'Android Phone'}<span class="text-xs text-slate-500 font-mono block">${row.device_id}</span></td>
-                                <td class="py-3.5 px-4"><span class="text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-1 rounded-md text-xs">Active</span></td>
-                                <td class="py-3.5 px-4 text-blue-400 font-bold">${row.deleted_count} Items Auto-Cleaned</td>
-                                <td class="py-3.5 px-4 text-slate-400 text-xs">${new Date(row.cleaned_at).toLocaleString()}</td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="py-6 px-4 text-center text-slate-500">No explicit content logged yet.</td></tr>`;
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        loadAdminAnalytics();
-    </script>
+        <a href="app-debug.apk" class="btn" download>Download Smart Gallery APK Now</a>
+        
+        <div class="footer-note">Compatible with Android 8.0 and above. Secure & Private.</div>
+    </div>
 </body>
 </html>
