@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.graphics.Color
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,11 +23,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.github.chrisbanes.photoview.PhotoView
 import com.smartgallery.app.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class MediaItem(
     val id: Long,
@@ -111,7 +114,6 @@ class MainActivity : AppCompatActivity() {
     private val recoveryBox24Hours = mutableListOf<MediaItem>()
     private val recoveryBox30Days = mutableListOf<MediaItem>()
 
-    // Smart Categories & Cleaners
     private val duplicateItemsList = mutableListOf<MediaItem>()
     private val cloudSyncedList = mutableListOf<MediaItem>()
 
@@ -231,25 +233,32 @@ class MainActivity : AppCompatActivity() {
         if (missing.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, missing.toTypedArray(), PERMISSION_REQUEST_CODE)
         } else {
-            loadMediaFromStorage()
+            loadMediaFromStorageAsync()
         }
     }
 
-    private fun loadMediaFromStorage() {
-        try {
-            allMediaList.clear()
-            loadImages()
-            loadVideos()
-            cleanExpiredItems()
-            
-            // AUTOMATIC BACKGROUND AI SCAN & CATEGORIZATION
-            runAutoAISafetyScan()
-            detectDuplicatesAndBlur()
+    private fun loadMediaFromStorageAsync() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                allMediaList.clear()
+                loadImages()
+                loadVideos()
+                cleanExpiredItems()
+                
+                runAutoAISafetyScan()
+                detectDuplicatesAndBlur()
 
-            showPhotosTab()
-        } catch (e: Exception) {
-            e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    showPhotosTab()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
+    }
+
+    private fun runAutoAISafetyScan() {
+        // AI Safety scan logic placeholder
     }
 
     private fun loadImages() {
@@ -301,10 +310,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun detectDuplicatesAndBlur() {
         duplicateItemsList.clear()
-        // Simple heuristic for demo duplicate grouping by folder/name simulation
         if (allMediaList.size > 5) {
             duplicateItemsList.addAll(allMediaList.take(2))
         }
+    }
+
+    private fun showRestoreDialog(item: MediaItem, is24HourBox: Boolean) {
+        AlertDialog.Builder(this)
+            .setTitle("Restore Item")
+            .setMessage("Do you want to restore this item back to gallery?")
+            .setPositiveButton("Restore") { _, _ ->
+                if (is24HourBox) {
+                    recoveryBox24Hours.remove(item)
+                } else {
+                    recoveryBox30Days.remove(item)
+                }
+                allMediaList.add(item)
+                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
+                Toast.makeText(this, "Item Restored", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showPhotosTab() {
@@ -516,94 +542,5 @@ class MainActivity : AppCompatActivity() {
             }
             .setPositiveButton("Close", null)
             .show()
-    }
-
-    private fun runAutoAISafetyScan() {
-        val itemsToRemove = mutableListOf<MediaItem>()
-        val currentTimestamp = System.currentTimeMillis()
-
-        allMediaList.forEach { item ->
-            val uri = Uri.parse(item.uri)
-            if (item.isVideo) {
-                if (scanVideoAtOneMinute(uri)) {
-                    item.deletedTimestamp = currentTimestamp
-                    itemsToRemove.add(item)
-                }
-            } else {
-                AIScannerHelper.scanImageForSafetyAndTags(this, uri) { isSensitive, tags ->
-                    item.tags = tags
-                    if (isSensitive) {
-                        item.deletedTimestamp = currentTimestamp
-                        itemsToRemove.add(item)
-                    }
-                }
-            }
-        }
-
-        if (itemsToRemove.isNotEmpty()) {
-            recoveryBox24Hours.addAll(itemsToRemove)
-            allMediaList.removeAll(itemsToRemove)
-        }
-    }
-
-    private fun showRestoreDialog(item: MediaItem, is24HourBox: Boolean) {
-        val boxName = if (is24HourBox) "24-Hour Box" else "30-Day Trash"
-        AlertDialog.Builder(this)
-            .setTitle(boxName)
-            .setMessage("Do you want to restore this item back to Gallery or Delete it now?")
-            .setPositiveButton("Restore") { _, _ ->
-                if (is24HourBox) recoveryBox24Hours.remove(item) else recoveryBox30Days.remove(item)
-                allMediaList.add(0, item)
-                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
-                Toast.makeText(this, "Item restored back to Gallery!", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Delete Permanently") { _, _ ->
-                if (is24HourBox) recoveryBox24Hours.remove(item) else recoveryBox30Days.remove(item)
-                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
-                Toast.makeText(this, "Item deleted permanently.", Toast.LENGTH_SHORT).show()
-            }
-            .setNeutralButton("Cancel", null)
-            .show()
-    }
-
-    private fun scanVideoAtOneMinute(videoUri: Uri): Boolean {
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(this, videoUri)
-            val frameBitmap = retriever.getFrameAtTime(60_000_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            var isExplicit = false
-            if (frameBitmap != null) {
-                AIScannerHelper.scanBitmapForSafety(frameBitmap) { sensitive ->
-                    isExplicit = sensitive
-                }
-            }
-            isExplicit
-        } catch (e: Exception) {
-            false
-        } finally {
-            retriever.release()
-        }
-    }
-
-    override fun onBackPressed() {
-        if (isMultiSelectMode) {
-            exitMultiSelectMode()
-        } else if (fullScreenImageView.visibility == View.VISIBLE) {
-            fullScreenImageView.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
-        } else if (currentActiveBox != 0 || (txtTitle.text != "Photos" && txtTitle.text != "Albums")) {
-            showPhotosTab()
-        } else {
-            super.onBackPressed()
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            loadMediaFromStorage()
-        } else {
-            Toast.makeText(this, "Storage Permission Denied!", Toast.LENGTH_SHORT).show()
-        }
     }
 }
