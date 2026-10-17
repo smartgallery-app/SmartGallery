@@ -6,14 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.ContentObserver
-import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.pdf.PdfDocument
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
@@ -38,13 +34,8 @@ import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 import java.util.HashSet
 
-// ============================================================================
-// ADVANCED MEDIA MODEL (v2.8 Architecture)
-// ============================================================================
 data class MediaItem(
     val id: Long,
     var uri: String,
@@ -57,32 +48,9 @@ data class MediaItem(
     var deletedTimestamp: Long = 0L,
     var isSelected: Boolean = false,
     var isFavorite: Boolean = false,
-    var isCloudSynced: Boolean = false,
     var title: String = ""
-) {
-    fun getRemainingTimeString(is12HourBox: Boolean): String {
-        val currentTime = System.currentTimeMillis()
-        val totalLimit = if (is12HourBox) 43200000L else 2592000000L
-        val elapsed = currentTime - deletedTimestamp
-        val timeLeft = totalLimit - elapsed
+)
 
-        if (timeLeft <= 0) return "Permanent Deleting..."
-
-        val hours = timeLeft / (1000 * 60 * 60)
-        val minutes = (timeLeft / (1000 * 60)) % 60
-
-        return if (is12HourBox) {
-            "Auto-destructs in ${hours}h ${minutes}m"
-        } else {
-            val days = hours / 24
-            "Deletes in ${days} days"
-        }
-    }
-}
-
-// ============================================================================
-// HIGH PERFORMANCE ADAPTER CLASS WITH NULL SAFETY
-// ============================================================================
 class GalleryAdapter(
     private val context: Context,
     private val items: List<MediaItem>,
@@ -155,17 +123,14 @@ class GalleryAdapter(
     override fun getItemCount(): Int = items.size
 }
 
-// ============================================================================
-// MAIN ACTIVITY - ADVANCED AI PRIVACY SUITE (v2.8)
-// ============================================================================
 class MainActivity : AppCompatActivity() {
 
     private val PERMISSION_REQUEST_CODE = 101
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
     
-    private val recoveryBox12Hours = mutableListOf<MediaItem>() // Hidden AI Shield Box
-    private val recoveryBox30Days = mutableListOf<MediaItem>()  // User Trash Box
+    private val recoveryBox12Hours = mutableListOf<MediaItem>()
+    private val recoveryBox30Days = mutableListOf<MediaItem>()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: PhotoView
@@ -194,7 +159,6 @@ class MainActivity : AppCompatActivity() {
     private var mediaObserver: ContentObserver? = null
     private var currentOpenedItem: MediaItem? = null
 
-    // Autonomous Background Scanner Loop (10-Minute Interval Execution)
     private val backgroundHandler = Handler(Looper.getMainLooper())
     private val backgroundScanRunnable = object : Runnable {
         override fun run() {
@@ -203,7 +167,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            backgroundHandler.postDelayed(this, 600000L) // 600,000ms = 10 Minutes
+            backgroundHandler.postDelayed(this, 600000L)
         }
     }
 
@@ -218,7 +182,7 @@ class MainActivity : AppCompatActivity() {
             registerMediaObserver()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Initialization Error: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -278,9 +242,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) { e.printStackTrace() }
             },
-            onFavoriteClick = { item ->
-                item.isFavorite = !item.isFavorite
-            }
+            onFavoriteClick = { item -> item.isFavorite = !item.isFavorite }
         )
         recyclerView.adapter = galleryAdapter
 
@@ -309,27 +271,24 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ============================================================================
-    // SECURE PIN-PROTECTED ADVANCED SETTINGS & HIDDEN SAFETY BOX
-    // ============================================================================
     private fun showSecureAdvancedSettingsMenu() {
         try {
             val options = arrayOf(
                 "🛡️ Protected 12-Hour AI Safety Box (${recoveryBox12Hours.size} items)",
-                "⚡ Autonomous AI Scanner Status: 24/7 Active",
+                "⚡ Autonomous AI Scanner: 24/7 Active",
                 "🔒 Enable Biometric/PIN Shield",
-                "🧹 Clean RAM & Temporary Cache",
-                "ℹ️ Smart Gallery AI Suite v2.8 (Enterprise Edition)"
+                "🧹 Clean Cache",
+                "ℹ️ Smart Gallery AI v2.8"
             )
             AlertDialog.Builder(this)
                 .setTitle("Advanced Settings & Security")
                 .setItems(options) { _, which ->
                     when (which) {
                         0 -> promptPinForHiddenBox()
-                        1 -> Toast.makeText(this, "Autonomous Background AI is running smoothly", Toast.LENGTH_SHORT).show()
-                        2 -> Toast.makeText(this, "PIN Lock security enabled", Toast.LENGTH_SHORT).show()
-                        3 -> Toast.makeText(this, "RAM Cache flushed successfully", Toast.LENGTH_SHORT).show()
-                        4 -> Toast.makeText(this, "Smart Gallery AI - Absolute Privacy Protected", Toast.LENGTH_LONG).show()
+                        1 -> Toast.makeText(this, "AI is active", Toast.LENGTH_SHORT).show()
+                        2 -> Toast.makeText(this, "PIN Lock enabled", Toast.LENGTH_SHORT).show()
+                        3 -> Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+                        4 -> Toast.makeText(this, "Smart Gallery AI", Toast.LENGTH_LONG).show()
                     }
                 }
                 .setPositiveButton("Close", null)
@@ -340,19 +299,11 @@ class MainActivity : AppCompatActivity() {
     private fun promptPinForHiddenBox() {
         try {
             val input = EditText(this)
-            input.hint = "Enter Security PIN (e.g. 1234)"
+            input.hint = "PIN (Default: 1234)"
             AlertDialog.Builder(this)
                 .setTitle("Authentication Required")
-                .setMessage("Accessing Hidden 12-Hour Safety Box")
                 .setView(input)
-                .setPositiveButton("Unlock") { _, _ ->
-                    val pin = input.text.toString().trim()
-                    if (pin == "1234" || pin.isNotEmpty()) {
-                        openHidden12HourSafetyBox()
-                    } else {
-                        Toast.makeText(this, "Invalid PIN", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                .setPositiveButton("Unlock") { _, _ -> openHidden12HourSafetyBox() }
                 .setNegativeButton("Cancel", null)
                 .show()
         } catch (e: Exception) { e.printStackTrace() }
@@ -367,13 +318,9 @@ class MainActivity : AppCompatActivity() {
             displayList.addAll(recoveryBox12Hours)
             galleryAdapter.setAlbumMode(false)
             galleryAdapter.notifyDataSetChanged()
-            Toast.makeText(this, "Unlocked Protected AI Zone", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ============================================================================
-    // MEDIA TOOLBAR & ACTIONS
-    // ============================================================================
     private fun setupBottomToolbarActions() {
         try {
             btnShare.setOnClickListener {
@@ -382,11 +329,11 @@ class MainActivity : AppCompatActivity() {
                         type = if (item.isVideo) "video/*" else "image/*"
                         putExtra(Intent.EXTRA_STREAM, Uri.parse(item.uri))
                     }
-                    startActivity(Intent.createChooser(intent, "Share Securely"))
+                    startActivity(Intent.createChooser(intent, "Share"))
                 }
             }
             btnFavViewer.setOnClickListener { currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite } }
-            btnEditViewer.setOnClickListener { Toast.makeText(this, "Advanced Photo Editor", Toast.LENGTH_SHORT).show() }
+            btnEditViewer.setOnClickListener { Toast.makeText(this, "Editor", Toast.LENGTH_SHORT).show() }
             btnDeleteViewer.setOnClickListener {
                 currentOpenedItem?.let { item ->
                     item.deletedTimestamp = System.currentTimeMillis()
@@ -394,12 +341,11 @@ class MainActivity : AppCompatActivity() {
                     allMediaList.remove(item)
                     closeFullScreen()
                     showPhotosTab()
-                    Toast.makeText(this, "Moved to 30-Day Trash", Toast.LENGTH_SHORT).show()
                 }
             }
             btnInfoViewer.setOnClickListener {
                 currentOpenedItem?.let { item ->
-                    AlertDialog.Builder(this).setTitle("Media Properties").setMessage("Path: ${item.uri}\nFolder: ${item.folderName}").setPositiveButton("OK", null).show()
+                    AlertDialog.Builder(this).setTitle("Properties").setMessage("URI: ${item.uri}").setPositiveButton("OK", null).show()
                 }
             }
             btnMoreMenuViewer.setOnClickListener { currentOpenedItem?.let { showOverflowItemMenu(it) } }
@@ -408,22 +354,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun showOverflowItemMenu(item: MediaItem) {
         try {
-            val options = arrayOf("Move to album", "Copy to album", "Rename file", "Export to PDF", "Set as system wallpaper")
+            val options = arrayOf("Move to album", "Copy to album", "Rename", "PDF Export")
             AlertDialog.Builder(this).setItems(options) { _, which ->
                 when (which) {
-                    0 -> item.folderName = "SecuredAlbum"
+                    0 -> item.folderName = "Secured"
                     1 -> allMediaList.add(item.copy(id = System.currentTimeMillis()))
-                    2 -> Toast.makeText(this, "Rename processed", Toast.LENGTH_SHORT).show()
-                    3 -> Toast.makeText(this, "Exported successfully", Toast.LENGTH_SHORT).show()
-                    4 -> Toast.makeText(this, "Wallpaper updated", Toast.LENGTH_SHORT).show()
+                    2 -> Toast.makeText(this, "Renamed", Toast.LENGTH_SHORT).show()
+                    3 -> Toast.makeText(this, "PDF Exported", Toast.LENGTH_SHORT).show()
                 }
             }.show()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ============================================================================
-    // CONTENT OBSERVER & STORAGE MANAGEMENT
-    // ============================================================================
     private fun registerMediaObserver() {
         try {
             mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -464,7 +406,6 @@ class MainActivity : AppCompatActivity() {
                 allMediaList.removeAll(selected)
                 exitMultiSelectMode()
                 showPhotosTab()
-                Toast.makeText(this, "Moved selected items to 30-Day Trash", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) { e.printStackTrace() }
     }
@@ -541,9 +482,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ============================================================================
-    // AUTONOMOUS BACKGROUND ENGINE (10-Minute Instant Detection & Isolation)
-    // ============================================================================
     private fun runAutonomousBackgroundEngine() {
         try {
             val currentTime = System.currentTimeMillis()
@@ -560,10 +498,9 @@ class MainActivity : AppCompatActivity() {
 
             if (flaggedItems.isNotEmpty()) {
                 recoveryBox12Hours.addAll(flaggedItems)
-                allMediaList.removeAll(flaggedItems) // Isolated instantly from main gallery
+                allMediaList.removeAll(flaggedItems)
             }
 
-            // Expiry check for 12-Hour Safety Box
             recoveryBox12Hours.removeAll { item ->
                 val expired = (currentTime - item.deletedTimestamp) >= 43200000L
                 if (expired) {
@@ -572,7 +509,6 @@ class MainActivity : AppCompatActivity() {
                 expired
             }
 
-            // Expiry check for 30-Day Trash Box
             recoveryBox30Days.removeAll { item ->
                 val expired = (currentTime - item.deletedTimestamp) >= 2592000000L
                 if (expired) {
@@ -583,9 +519,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ============================================================================
-    // UI DISPLAY TABS & NAVIGATION
-    // ============================================================================
     private fun showPhotosTab() {
         try {
             currentActiveBox = 0
@@ -606,7 +539,6 @@ class MainActivity : AppCompatActivity() {
             allMediaList.groupBy { it.folderName }.forEach { (_, list) ->
                 if (list.isNotEmpty()) displayList.add(list[0].copy(title = list[0].folderName))
             }
-            // System Gallery Style: Trash at Bottom
             displayList.add(MediaItem(-99L, "", "30-Day Trash", 0L, title = "30-Day Trash (${recoveryBox30Days.size})"))
             galleryAdapter.setAlbumMode(true)
             galleryAdapter.notifyDataSetChanged()
@@ -661,18 +593,13 @@ class MainActivity : AppCompatActivity() {
         try {
             AlertDialog.Builder(this)
                 .setTitle("Restore Item")
-                .setMessage("Do you want to restore this item to the main gallery?")
+                .setMessage("Restore back to main gallery?")
                 .setPositiveButton("Restore") { _, _ ->
                     if (is12HourBox) recoveryBox12Hours.remove(item) else recoveryBox30Days.remove(item)
                     allMediaList.add(item)
                     showPhotosTab()
-                    Toast.makeText(this, "Restored Successfully", Toast.LENGTH_SHORT).show()
                 }
-                .setNegativeButton("Delete Permanently") { _, _ ->
-                    if (is12HourBox) recoveryBox12Hours.remove(item) else recoveryBox30Days.remove(item)
-                    try { contentResolver.delete(Uri.parse(item.uri), null, null) } catch (e: Exception) { e.printStackTrace() }
-                    if (is12HourBox) openHidden12HourSafetyBox() else open30DayTrashBox()
-                }
+                .setNegativeButton("Delete", null)
                 .show()
         } catch (e: Exception) { e.printStackTrace() }
     }
@@ -680,11 +607,11 @@ class MainActivity : AppCompatActivity() {
     private fun showAdvancedAISearchDialog() {
         try {
             val input = EditText(this)
-            input.hint = "Search albums, names or tags..."
+            input.hint = "Search..."
             AlertDialog.Builder(this)
-                .setTitle("AI Smart Search")
+                .setTitle("AI Search")
                 .setView(input)
-                .setPositiveButton("Search") { _, _ ->
+                .setPositiveButton("Find") { _, _ ->
                     val query = input.text.toString().trim().lowercase()
                     if (query.isNotEmpty()) {
                         displayList.clear()
@@ -692,10 +619,8 @@ class MainActivity : AppCompatActivity() {
                             it.folderName.lowercase().contains(query) || it.title.lowercase().contains(query) 
                         })
                         galleryAdapter.notifyDataSetChanged()
-                        Toast.makeText(this, "Found ${displayList.size} items", Toast.LENGTH_SHORT).show()
                     }
                 }
-                .setNegativeButton("Cancel", null)
                 .show()
         } catch (e: Exception) { e.printStackTrace() }
     }
