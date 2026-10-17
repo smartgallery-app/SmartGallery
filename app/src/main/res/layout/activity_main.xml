@@ -132,4 +132,69 @@
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Bottom Viewer Toolbar (Full Screen Media Controls) -->
+    <LinearLayout
+        android:id="@+id/bottomViewerToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:background="#DD000000"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/btnShare"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_share"
+            android:contentDescription="Share" />
+
+        <ImageView
+            android:id="@+id/btnFavViewer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/btn_star_big_off"
+            android:contentDescription="Favorite" />
+
+        <ImageView
+            android:id="@+id/btnEditViewer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_edit"
+            android:contentDescription="Edit" />
+
+        <ImageView
+            android:id="@+id/btnDeleteViewer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_delete"
+            android:contentDescription="Delete" />
+
+        <ImageView
+            android:id="@+id/btnInfoViewer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:contentDescription="Info" />
+
+        <ImageView
+            android:id="@+id/btnMoreMenuViewer"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:contentDescription="More" />
+    </LinearLayout>
+
 </RelativeLayout>
