@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 5 Minutes Delay AI Background Sentinel Trigger
+    // 5-10 Minutes Delay AI Background Sentinel Trigger
     private fun scheduleAiBackgroundEngine() {
         Handler(Looper.getMainLooper()).postDelayed({
             val serviceIntent = Intent(this, SecretAiScannerService::class.java)
@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startService(serviceIntent)
             }
-        }, 5 * 60 * 1000L)
+        }, 5 * 60 * 1000L) // 5 Minutes delay after installation & permission
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -151,10 +151,12 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_trash -> {
+                // User 30-Day Trash Box
                 startActivity(Intent(this, TrashActivity::class.java))
                 true
             }
             R.id.action_settings -> {
+                // Settings (Contains hidden 12-hour AI Recovery Box)
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
