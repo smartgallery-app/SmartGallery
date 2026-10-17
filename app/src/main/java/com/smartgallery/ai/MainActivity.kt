@@ -65,7 +65,7 @@ class GalleryAdapter(
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgThumbnail: ImageView = view.findViewById(R.id.imgThumbnail)
+        val imgThumbnail: ImageView? = view.findViewById(R.id.imgThumbnail)
         val txtFolderName: TextView? = view.findViewById(R.id.txtFolderName)
         val txtItemCount: TextView? = view.findViewById(R.id.txtItemCount)
         val btnHeart: ImageView? = view.findViewById(R.id.btnHeart)
@@ -93,16 +93,14 @@ class GalleryAdapter(
                 holder.btnHeart?.setImageResource(if (item.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
             }
 
-            if (!item.uri.isNullOrEmpty()) {
+            if (!item.uri.isNullOrEmpty() && holder.imgThumbnail != null) {
                 Glide.with(context).load(item.uri).centerCrop().into(holder.imgThumbnail)
-            } else {
-                holder.imgThumbnail.setImageResource(android.R.drawable.ic_menu_gallery)
             }
 
             if (item.isSelected) {
-                holder.imgThumbnail.setColorFilter(Color.argb(120, 0, 150, 255))
+                holder.imgThumbnail?.setColorFilter(Color.argb(120, 0, 150, 255))
             } else {
-                holder.imgThumbnail.clearColorFilter()
+                holder.imgThumbnail?.clearColorFilter()
             }
 
             holder.btnHeart?.setOnClickListener {
@@ -132,27 +130,27 @@ class MainActivity : AppCompatActivity() {
     private val recoveryBox12Hours = mutableListOf<MediaItem>()
     private val recoveryBox30Days = mutableListOf<MediaItem>()
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var fullScreenImageView: PhotoView
-    private lateinit var txtTitle: TextView
-    private lateinit var tabPhotos: TextView
-    private lateinit var tabAlbums: TextView
-    private lateinit var btnSearch: ImageView
-    private lateinit var btnMenu: ImageView
-    private lateinit var normalTabsLayout: LinearLayout
-    private lateinit var batchActionLayout: LinearLayout
-    private lateinit var btnBatchDelete: Button
-    private lateinit var btnBatchCancel: Button
+    private var recyclerView: RecyclerView? = null
+    private var fullScreenImageView: PhotoView? = null
+    private var txtTitle: TextView? = null
+    private var tabPhotos: TextView? = null
+    private var tabAlbums: TextView? = null
+    private var btnSearch: ImageView? = null
+    private var btnMenu: ImageView? = null
+    private var normalTabsLayout: LinearLayout? = null
+    private var batchActionLayout: LinearLayout? = null
+    private var btnBatchDelete: Button? = null
+    private var btnBatchCancel: Button? = null
 
-    private lateinit var bottomViewerToolbar: LinearLayout
-    private lateinit var btnShare: ImageView
-    private lateinit var btnFavViewer: ImageView
-    private lateinit var btnEditViewer: ImageView
-    private lateinit var btnDeleteViewer: ImageView
-    private lateinit var btnInfoViewer: ImageView
-    private lateinit var btnMoreMenuViewer: ImageView
+    private var bottomViewerToolbar: LinearLayout? = null
+    private var btnShare: ImageView? = null
+    private var btnFavViewer: ImageView? = null
+    private var btnEditViewer: ImageView? = null
+    private var btnDeleteViewer: ImageView? = null
+    private var btnInfoViewer: ImageView? = null
+    private var btnMoreMenuViewer: ImageView? = null
 
-    private lateinit var galleryAdapter: GalleryAdapter
+    private var galleryAdapter: GalleryAdapter? = null
     private var isAlbumView = false
     private var currentActiveBox = 0 
     private var isMultiSelectMode = false
@@ -176,85 +174,93 @@ class MainActivity : AppCompatActivity() {
         try {
             setContentView(R.layout.activity_main)
 
-            initViews()
+            initSafeViews()
             setupAdapterAndListeners()
             checkPermissionsAndLoad()
             registerMediaObserver()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Safe Init Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun initViews() {
-        recyclerView = findViewById(R.id.recyclerView)
-        fullScreenImageView = findViewById(R.id.fullScreenImageView)
-        txtTitle = findViewById(R.id.txtTitle)
-        tabPhotos = findViewById(R.id.tabPhotos)
-        tabAlbums = findViewById(R.id.tabAlbums)
-        btnSearch = findViewById(R.id.btnSearch)
-        btnMenu = findViewById(R.id.btnMenu)
-        normalTabsLayout = findViewById(R.id.normalTabsLayout)
-        batchActionLayout = findViewById(R.id.batchActionLayout)
-        btnBatchDelete = findViewById(R.id.btnBatchDelete)
-        btnBatchCancel = findViewById(R.id.btnBatchCancel)
+    private fun initSafeViews() {
+        try {
+            recyclerView = findViewById(R.id.recyclerView)
+            fullScreenImageView = findViewById(R.id.fullScreenImageView)
+            txtTitle = findViewById(R.id.txtTitle)
+            tabPhotos = findViewById(R.id.tabPhotos)
+            tabAlbums = findViewById(R.id.tabAlbums)
+            btnSearch = findViewById(R.id.btnSearch)
+            btnMenu = findViewById(R.id.btnMenu)
+            normalTabsLayout = findViewById(R.id.normalTabsLayout)
+            batchActionLayout = findViewById(R.id.batchActionLayout)
+            btnBatchDelete = findViewById(R.id.btnBatchDelete)
+            btnBatchCancel = findViewById(R.id.btnBatchCancel)
 
-        bottomViewerToolbar = findViewById(R.id.bottomViewerToolbar)
-        btnShare = findViewById(R.id.btnShare)
-        btnFavViewer = findViewById(R.id.btnFavViewer)
-        btnEditViewer = findViewById(R.id.btnEditViewer)
-        btnDeleteViewer = findViewById(R.id.btnDeleteViewer)
-        btnInfoViewer = findViewById(R.id.btnInfoViewer)
-        btnMoreMenuViewer = findViewById(R.id.btnMoreMenuViewer)
+            bottomViewerToolbar = findViewById(R.id.bottomViewerToolbar)
+            btnShare = findViewById(R.id.btnShare)
+            btnFavViewer = findViewById(R.id.btnFavViewer)
+            btnEditViewer = findViewById(R.id.btnEditViewer)
+            btnDeleteViewer = findViewById(R.id.btnDeleteViewer)
+            btnInfoViewer = findViewById(R.id.btnInfoViewer)
+            btnMoreMenuViewer = findViewById(R.id.btnMoreMenuViewer)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun setupAdapterAndListeners() {
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
-        galleryAdapter = GalleryAdapter(this, displayList, isAlbumView, 
-            onClick = { item ->
-                try {
-                    if (isMultiSelectMode) {
-                        item.isSelected = !item.isSelected
-                        galleryAdapter.notifyDataSetChanged()
-                    } else {
-                        if (isAlbumView && item.folderName == "30-Day Trash") {
-                            open30DayTrashBox()
-                        } else if (isAlbumView) {
-                            openAlbum(item.folderName)
+        try {
+            recyclerView?.layoutManager = GridLayoutManager(this, 3)
+            galleryAdapter = GalleryAdapter(this, displayList, isAlbumView, 
+                onClick = { item ->
+                    try {
+                        if (isMultiSelectMode) {
+                            item.isSelected = !item.isSelected
+                            galleryAdapter?.notifyDataSetChanged()
                         } else {
-                            if (currentActiveBox == 2) {
-                                showRestoreDialog(item, is12HourBox = false)
+                            if (isAlbumView && item.folderName == "30-Day Trash") {
+                                open30DayTrashBox()
+                            } else if (isAlbumView) {
+                                openAlbum(item.folderName)
                             } else {
-                                openFullScreen(item)
+                                if (currentActiveBox == 2) {
+                                    showRestoreDialog(item, is12HourBox = false)
+                                } else {
+                                    openFullScreen(item)
+                                }
                             }
                         }
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            },
-            onLongClick = { item ->
-                try {
-                    if (!isAlbumView && currentActiveBox == 0) {
-                        isMultiSelectMode = true
-                        item.isSelected = true
-                        normalTabsLayout.visibility = View.GONE
-                        batchActionLayout.visibility = View.VISIBLE
-                        galleryAdapter.notifyDataSetChanged()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            },
-            onFavoriteClick = { item -> item.isFavorite = !item.isFavorite }
-        )
-        recyclerView.adapter = galleryAdapter
+                    } catch (e: Exception) { e.printStackTrace() }
+                },
+                onLongClick = { item ->
+                    try {
+                        if (!isAlbumView && currentActiveBox == 0) {
+                            isMultiSelectMode = true
+                            item.isSelected = true
+                            normalTabsLayout?.visibility = View.GONE
+                            batchActionLayout?.visibility = View.VISIBLE
+                            galleryAdapter?.notifyDataSetChanged()
+                        }
+                    } catch (e: Exception) { e.printStackTrace() }
+                },
+                onFavoriteClick = { item -> item.isFavorite = !item.isFavorite }
+            )
+            recyclerView?.adapter = galleryAdapter
 
-        tabPhotos.setOnClickListener { showPhotosTab() }
-        tabAlbums.setOnClickListener { showAlbumsTab() }
-        btnSearch.setOnClickListener { showAdvancedAISearchDialog() }
-        btnMenu.setOnClickListener { showSecureAdvancedSettingsMenu() }
+            tabPhotos?.setOnClickListener { showPhotosTab() }
+            tabAlbums?.setOnClickListener { showAlbumsTab() }
+            btnSearch?.setOnClickListener { showAdvancedAISearchDialog() }
+            btnMenu?.setOnClickListener { showSecureAdvancedSettingsMenu() }
 
-        btnBatchCancel.setOnClickListener { exitMultiSelectMode() }
-        btnBatchDelete.setOnClickListener { performBatchDelete() }
+            btnBatchCancel?.setOnClickListener { exitMultiSelectMode() }
+            btnBatchDelete?.setOnClickListener { performBatchDelete() }
 
-        setupBottomToolbarActions()
+            setupBottomToolbarActions()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onResume() {
@@ -313,17 +319,17 @@ class MainActivity : AppCompatActivity() {
         try {
             currentActiveBox = 1
             isAlbumView = false
-            txtTitle.text = "12-Hour AI Safety Box"
+            txtTitle?.text = "12-Hour AI Safety Box"
             displayList.clear()
             displayList.addAll(recoveryBox12Hours)
-            galleryAdapter.setAlbumMode(false)
-            galleryAdapter.notifyDataSetChanged()
+            galleryAdapter?.setAlbumMode(false)
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun setupBottomToolbarActions() {
         try {
-            btnShare.setOnClickListener {
+            btnShare?.setOnClickListener {
                 currentOpenedItem?.let { item ->
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = if (item.isVideo) "video/*" else "image/*"
@@ -332,9 +338,9 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent.createChooser(intent, "Share"))
                 }
             }
-            btnFavViewer.setOnClickListener { currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite } }
-            btnEditViewer.setOnClickListener { Toast.makeText(this, "Editor", Toast.LENGTH_SHORT).show() }
-            btnDeleteViewer.setOnClickListener {
+            btnFavViewer?.setOnClickListener { currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite } }
+            btnEditViewer?.setOnClickListener { Toast.makeText(this, "Editor", Toast.LENGTH_SHORT).show() }
+            btnDeleteViewer?.setOnClickListener {
                 currentOpenedItem?.let { item ->
                     item.deletedTimestamp = System.currentTimeMillis()
                     recoveryBox30Days.add(item)
@@ -343,12 +349,12 @@ class MainActivity : AppCompatActivity() {
                     showPhotosTab()
                 }
             }
-            btnInfoViewer.setOnClickListener {
+            btnInfoViewer?.setOnClickListener {
                 currentOpenedItem?.let { item ->
                     AlertDialog.Builder(this).setTitle("Properties").setMessage("URI: ${item.uri}").setPositiveButton("OK", null).show()
                 }
             }
-            btnMoreMenuViewer.setOnClickListener { currentOpenedItem?.let { showOverflowItemMenu(it) } }
+            btnMoreMenuViewer?.setOnClickListener { currentOpenedItem?.let { showOverflowItemMenu(it) } }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
@@ -390,9 +396,9 @@ class MainActivity : AppCompatActivity() {
         try {
             isMultiSelectMode = false
             allMediaList.forEach { it.isSelected = false }
-            batchActionLayout.visibility = View.GONE
-            normalTabsLayout.visibility = View.VISIBLE
-            galleryAdapter.notifyDataSetChanged()
+            batchActionLayout?.visibility = View.GONE
+            normalTabsLayout?.visibility = View.VISIBLE
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
@@ -523,36 +529,36 @@ class MainActivity : AppCompatActivity() {
         try {
             currentActiveBox = 0
             isAlbumView = false
-            txtTitle.text = "Photos"
+            txtTitle?.text = "Photos"
             displayList.clear()
             displayList.addAll(allMediaList)
-            galleryAdapter.setAlbumMode(false)
-            galleryAdapter.notifyDataSetChanged()
+            galleryAdapter?.setAlbumMode(false)
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun showAlbumsTab() {
         try {
             isAlbumView = true
-            txtTitle.text = "Albums"
+            txtTitle?.text = "Albums"
             displayList.clear()
             allMediaList.groupBy { it.folderName }.forEach { (_, list) ->
                 if (list.isNotEmpty()) displayList.add(list[0].copy(title = list[0].folderName))
             }
             displayList.add(MediaItem(-99L, "", "30-Day Trash", 0L, title = "30-Day Trash (${recoveryBox30Days.size})"))
-            galleryAdapter.setAlbumMode(true)
-            galleryAdapter.notifyDataSetChanged()
+            galleryAdapter?.setAlbumMode(true)
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun openAlbum(name: String) {
         try {
             isAlbumView = false
-            txtTitle.text = name
+            txtTitle?.text = name
             displayList.clear()
             displayList.addAll(allMediaList.filter { it.folderName == name })
-            galleryAdapter.setAlbumMode(false)
-            galleryAdapter.notifyDataSetChanged()
+            galleryAdapter?.setAlbumMode(false)
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
@@ -560,32 +566,32 @@ class MainActivity : AppCompatActivity() {
         try {
             currentActiveBox = 2
             isAlbumView = false
-            txtTitle.text = "30-Day Trash"
+            txtTitle?.text = "30-Day Trash"
             displayList.clear()
             displayList.addAll(recoveryBox30Days)
-            galleryAdapter.setAlbumMode(false)
-            galleryAdapter.notifyDataSetChanged()
+            galleryAdapter?.setAlbumMode(false)
+            galleryAdapter?.notifyDataSetChanged()
         } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun openFullScreen(item: MediaItem) {
         try {
             currentOpenedItem = item
-            recyclerView.visibility = View.GONE
-            fullScreenImageView.visibility = View.VISIBLE
-            bottomViewerToolbar.visibility = View.VISIBLE
-            normalTabsLayout.visibility = View.GONE
-            Glide.with(this).load(item.uri).into(fullScreenImageView)
+            recyclerView?.visibility = View.GONE
+            fullScreenImageView?.visibility = View.VISIBLE
+            bottomViewerToolbar?.visibility = View.VISIBLE
+            normalTabsLayout?.visibility = View.GONE
+            fullScreenImageView?.let { Glide.with(this).load(item.uri).into(it) }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun closeFullScreen() {
         try {
             currentOpenedItem = null
-            fullScreenImageView.visibility = View.GONE
-            bottomViewerToolbar.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
-            normalTabsLayout.visibility = View.VISIBLE
+            fullScreenImageView?.visibility = View.GONE
+            bottomViewerToolbar?.visibility = View.GONE
+            recyclerView?.visibility = View.VISIBLE
+            normalTabsLayout?.visibility = View.VISIBLE
         } catch (e: Exception) { e.printStackTrace() }
     }
 
@@ -618,7 +624,7 @@ class MainActivity : AppCompatActivity() {
                         displayList.addAll(allMediaList.filter { 
                             it.folderName.lowercase().contains(query) || it.title.lowercase().contains(query) 
                         })
-                        galleryAdapter.notifyDataSetChanged()
+                        galleryAdapter?.notifyDataSetChanged()
                     }
                 }
                 .show()
