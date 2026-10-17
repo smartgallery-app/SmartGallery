@@ -13,28 +13,19 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.view.LayoutInflater
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.HashSet
 
 data class MediaItem(
     val id: Long,
@@ -43,83 +34,11 @@ data class MediaItem(
     val dateModified: Long,
     val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
-    var personName: String = "Unknown",
     var tags: MutableList<String> = mutableListOf(),
     var deletedTimestamp: Long = 0L,
     var isSelected: Boolean = false,
-    var isFavorite: Boolean = false,
     var title: String = ""
 )
-
-class GalleryAdapter(
-    private val context: Context,
-    private val items: List<MediaItem>,
-    private var isAlbumMode: Boolean,
-    private val onClick: (MediaItem) -> Unit,
-    private val onLongClick: (MediaItem) -> Unit,
-    private val onFavoriteClick: (MediaItem) -> Unit
-) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
-
-    fun setAlbumMode(isAlbum: Boolean) {
-        this.isAlbumMode = isAlbum
-    }
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imgThumbnail: ImageView? = view.findViewById(R.id.imgThumbnail)
-        val txtFolderName: TextView? = view.findViewById(R.id.txtFolderName)
-        val txtItemCount: TextView? = view.findViewById(R.id.txtItemCount)
-        val btnHeart: ImageView? = view.findViewById(R.id.btnHeart)
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.item_folder, parent, false)
-        return ViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        try {
-            if (position < 0 || position >= items.size) return
-            val item = items[position]
-
-            if (isAlbumMode) {
-                holder.txtFolderName?.visibility = View.VISIBLE
-                holder.txtFolderName?.text = if (item.title.isNotEmpty()) item.title else item.folderName
-                holder.txtItemCount?.visibility = View.GONE
-                holder.btnHeart?.visibility = View.GONE
-            } else {
-                holder.txtFolderName?.visibility = View.GONE
-                holder.txtItemCount?.visibility = View.GONE
-                holder.btnHeart?.visibility = View.VISIBLE
-                holder.btnHeart?.setImageResource(if (item.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
-            }
-
-            if (!item.uri.isNullOrEmpty() && holder.imgThumbnail != null) {
-                Glide.with(context).load(item.uri).centerCrop().into(holder.imgThumbnail)
-            }
-
-            if (item.isSelected) {
-                holder.imgThumbnail?.setColorFilter(Color.argb(120, 0, 150, 255))
-            } else {
-                holder.imgThumbnail?.clearColorFilter()
-            }
-
-            holder.btnHeart?.setOnClickListener {
-                onFavoriteClick(item)
-                notifyItemChanged(position)
-            }
-
-            holder.itemView.setOnClickListener { onClick(item) }
-            holder.itemView.setOnLongClickListener { 
-                onLongClick(item)
-                true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    override fun getItemCount(): Int = items.size
-}
 
 class MainActivity : AppCompatActivity() {
 
@@ -130,290 +49,118 @@ class MainActivity : AppCompatActivity() {
     private val recoveryBox12Hours = mutableListOf<MediaItem>()
     private val recoveryBox30Days = mutableListOf<MediaItem>()
 
-    private var recyclerView: RecyclerView? = null
-    private var fullScreenImageView: PhotoView? = null
-    private var txtTitle: TextView? = null
-    private var tabPhotos: TextView? = null
-    private var tabAlbums: TextView? = null
-    private var btnSearch: ImageView? = null
-    private var btnMenu: ImageView? = null
-    private var normalTabsLayout: LinearLayout? = null
-    private var batchActionLayout: LinearLayout? = null
-    private var btnBatchDelete: Button? = null
-    private var btnBatchCancel: Button? = null
-
-    private var bottomViewerToolbar: LinearLayout? = null
-    private var btnShare: ImageView? = null
-    private var btnFavViewer: ImageView? = null
-    private var btnEditViewer: ImageView? = null
-    private var btnDeleteViewer: ImageView? = null
-    private var btnInfoViewer: ImageView? = null
-    private var btnMoreMenuViewer: ImageView? = null
-
-    private var galleryAdapter: GalleryAdapter? = null
-    private var isAlbumView = false
-    private var currentActiveBox = 0 
-    private var isMultiSelectMode = false
+    private lateinit var mainContainer: LinearLayout
+    private lateinit var txtTitle: TextView
+    private lateinit var gridView: GridView
+    private lateinit var gridAdapter: MediaGridAdapter
+    
+    private var currentMode = 0 // 0: Main Photos, 1: 12-Hour Box, 2: 30-Day Trash
     private var mediaObserver: ContentObserver? = null
-    private var currentOpenedItem: MediaItem? = null
 
+    // 10-Minute Autonomous Background AI Scan Engine
     private val backgroundHandler = Handler(Looper.getMainLooper())
-    private val backgroundScanRunnable = object : Runnable {
+    private val backgroundRunnable = object : Runnable {
         override fun run() {
             try {
                 runAutonomousBackgroundEngine()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            backgroundHandler.postDelayed(this, 600000L)
+            backgroundHandler.postDelayed(this, 600000L) // 10 Minutes Loop
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
-            setContentView(R.layout.activity_main)
-
-            initSafeViews()
-            setupAdapterAndListeners()
+            buildPureDynamicLayout()
             checkPermissionsAndLoad()
             registerMediaObserver()
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Safe Init Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun initSafeViews() {
-        try {
-            recyclerView = findViewById(R.id.recyclerView)
-            fullScreenImageView = findViewById(R.id.fullScreenImageView)
-            txtTitle = findViewById(R.id.txtTitle)
-            tabPhotos = findViewById(R.id.tabPhotos)
-            tabAlbums = findViewById(R.id.tabAlbums)
-            btnSearch = findViewById(R.id.btnSearch)
-            btnMenu = findViewById(R.id.btnMenu)
-            normalTabsLayout = findViewById(R.id.normalTabsLayout)
-            batchActionLayout = findViewById(R.id.batchActionLayout)
-            btnBatchDelete = findViewById(R.id.btnBatchDelete)
-            btnBatchCancel = findViewById(R.id.btnBatchCancel)
-
-            bottomViewerToolbar = findViewById(R.id.bottomViewerToolbar)
-            btnShare = findViewById(R.id.btnShare)
-            btnFavViewer = findViewById(R.id.btnFavViewer)
-            btnEditViewer = findViewById(R.id.btnEditViewer)
-            btnDeleteViewer = findViewById(R.id.btnDeleteViewer)
-            btnInfoViewer = findViewById(R.id.btnInfoViewer)
-            btnMoreMenuViewer = findViewById(R.id.btnMoreMenuViewer)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun setupAdapterAndListeners() {
-        try {
-            recyclerView?.layoutManager = GridLayoutManager(this, 3)
-            galleryAdapter = GalleryAdapter(this, displayList, isAlbumView, 
-                onClick = { item ->
-                    try {
-                        if (isMultiSelectMode) {
-                            item.isSelected = !item.isSelected
-                            galleryAdapter?.notifyDataSetChanged()
-                        } else {
-                            if (isAlbumView && item.folderName == "30-Day Trash") {
-                                open30DayTrashBox()
-                            } else if (isAlbumView) {
-                                openAlbum(item.folderName)
-                            } else {
-                                if (currentActiveBox == 2) {
-                                    showRestoreDialog(item, is12HourBox = false)
-                                } else {
-                                    openFullScreen(item)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) { e.printStackTrace() }
-                },
-                onLongClick = { item ->
-                    try {
-                        if (!isAlbumView && currentActiveBox == 0) {
-                            isMultiSelectMode = true
-                            item.isSelected = true
-                            normalTabsLayout?.visibility = View.GONE
-                            batchActionLayout?.visibility = View.VISIBLE
-                            galleryAdapter?.notifyDataSetChanged()
-                        }
-                    } catch (e: Exception) { e.printStackTrace() }
-                },
-                onFavoriteClick = { item -> item.isFavorite = !item.isFavorite }
+    // Dynamic Code Layout to eliminate any XML ID mismatch crash
+    private fun buildPureDynamicLayout() {
+        mainContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#0B0F19"))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
-            recyclerView?.adapter = galleryAdapter
-
-            tabPhotos?.setOnClickListener { showPhotosTab() }
-            tabAlbums?.setOnClickListener { showAlbumsTab() }
-            btnSearch?.setOnClickListener { showAdvancedAISearchDialog() }
-            btnMenu?.setOnClickListener { showSecureAdvancedSettingsMenu() }
-
-            btnBatchCancel?.setOnClickListener { exitMultiSelectMode() }
-            btnBatchDelete?.setOnClickListener { performBatchDelete() }
-
-            setupBottomToolbarActions()
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
-    }
 
-    override fun onResume() {
-        super.onResume()
-        try {
-            backgroundHandler.post(backgroundScanRunnable)
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        // Header Bar
+        val headerLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(32, 40, 32, 20)
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(Color.parseColor("#111827"))
+        }
 
-    override fun onPause() {
-        super.onPause()
-        try {
-            backgroundHandler.removeCallbacks(backgroundScanRunnable)
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        txtTitle = TextView(this).apply {
+            text = "Smart Gallery AI"
+            textSize = 20f
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
 
-    private fun showSecureAdvancedSettingsMenu() {
-        try {
-            val options = arrayOf(
-                "🛡️ Protected 12-Hour AI Safety Box (${recoveryBox12Hours.size} items)",
-                "⚡ Autonomous AI Scanner: 24/7 Active",
-                "🔒 Enable Biometric/PIN Shield",
-                "🧹 Clean Cache",
-                "ℹ️ Smart Gallery AI v2.8"
+        val btnMenu = Button(this).apply {
+            text = "🛡️ Safety"
+            setBackgroundColor(Color.parseColor("#1F2937"))
+            setTextColor(Color.GREEN)
+            setOnClickListener { promptPinForHiddenBox() }
+        }
+
+        headerLayout.addView(txtTitle)
+        headerLayout.addView(btnMenu)
+
+        // Grid View for Images
+        gridView = GridView(this).apply {
+            numColumns = 3
+            verticalSpacing = 8
+            horizontalSpacing = 8
+            setPadding(8, 8, 8, 8)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0, 1f
             )
-            AlertDialog.Builder(this)
-                .setTitle("Advanced Settings & Security")
-                .setItems(options) { _, which ->
-                    when (which) {
-                        0 -> promptPinForHiddenBox()
-                        1 -> Toast.makeText(this, "AI is active", Toast.LENGTH_SHORT).show()
-                        2 -> Toast.makeText(this, "PIN Lock enabled", Toast.LENGTH_SHORT).show()
-                        3 -> Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
-                        4 -> Toast.makeText(this, "Smart Gallery AI", Toast.LENGTH_LONG).show()
-                    }
-                }
-                .setPositiveButton("Close", null)
-                .show()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        }
 
-    private fun promptPinForHiddenBox() {
-        try {
-            val input = EditText(this)
-            input.hint = "PIN (Default: 1234)"
-            AlertDialog.Builder(this)
-                .setTitle("Authentication Required")
-                .setView(input)
-                .setPositiveButton("Unlock") { _, _ -> openHidden12HourSafetyBox() }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        gridAdapter = MediaGridAdapter(this, displayList) { item ->
+            onItemClicked(item)
+        }
+        gridView.adapter = gridAdapter
 
-    private fun openHidden12HourSafetyBox() {
-        try {
-            currentActiveBox = 1
-            isAlbumView = false
-            txtTitle?.text = "12-Hour AI Safety Box"
-            displayList.clear()
-            displayList.addAll(recoveryBox12Hours)
-            galleryAdapter?.setAlbumMode(false)
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        // Bottom Navigation Tabs
+        val bottomNav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.parseColor("#111827"))
+            setPadding(16, 16, 16, 16)
+        }
 
-    private fun setupBottomToolbarActions() {
-        try {
-            btnShare?.setOnClickListener {
-                currentOpenedItem?.let { item ->
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = if (item.isVideo) "video/*" else "image/*"
-                        putExtra(Intent.EXTRA_STREAM, Uri.parse(item.uri))
-                    }
-                    startActivity(Intent.createChooser(intent, "Share"))
-                }
-            }
-            btnFavViewer?.setOnClickListener { currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite } }
-            btnEditViewer?.setOnClickListener { Toast.makeText(this, "Editor", Toast.LENGTH_SHORT).show() }
-            btnDeleteViewer?.setOnClickListener {
-                currentOpenedItem?.let { item ->
-                    item.deletedTimestamp = System.currentTimeMillis()
-                    recoveryBox30Days.add(item)
-                    allMediaList.remove(item)
-                    closeFullScreen()
-                    showPhotosTab()
-                }
-            }
-            btnInfoViewer?.setOnClickListener {
-                currentOpenedItem?.let { item ->
-                    AlertDialog.Builder(this).setTitle("Properties").setMessage("URI: ${item.uri}").setPositiveButton("OK", null).show()
-                }
-            }
-            btnMoreMenuViewer?.setOnClickListener { currentOpenedItem?.let { showOverflowItemMenu(it) } }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        val btnPhotos = Button(this).apply {
+            text = "Photos"
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener { switchTab(0) }
+        }
 
-    private fun showOverflowItemMenu(item: MediaItem) {
-        try {
-            val options = arrayOf("Move to album", "Copy to album", "Rename", "PDF Export")
-            AlertDialog.Builder(this).setItems(options) { _, which ->
-                when (which) {
-                    0 -> item.folderName = "Secured"
-                    1 -> allMediaList.add(item.copy(id = System.currentTimeMillis()))
-                    2 -> Toast.makeText(this, "Renamed", Toast.LENGTH_SHORT).show()
-                    3 -> Toast.makeText(this, "PDF Exported", Toast.LENGTH_SHORT).show()
-                }
-            }.show()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        val btnTrash = Button(this).apply {
+            text = "Trash (30D)"
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener { switchTab(2) }
+        }
 
-    private fun registerMediaObserver() {
-        try {
-            mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-                override fun onChange(selfChange: Boolean, uri: Uri?) {
-                    super.onChange(selfChange, uri)
-                    loadMediaFromStorageAsync()
-                }
-            }
-            contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaObserver!!)
-            contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaObserver!!)
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        bottomNav.addView(btnPhotos)
+        bottomNav.addView(btnTrash)
 
-    override fun onDestroy() {
-        super.onDestroy()
-        try {
-            mediaObserver?.let { contentResolver.unregisterContentObserver(it) }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
+        mainContainer.addView(headerLayout)
+        mainContainer.addView(gridView)
+        mainContainer.addView(bottomNav)
 
-    private fun exitMultiSelectMode() {
-        try {
-            isMultiSelectMode = false
-            allMediaList.forEach { it.isSelected = false }
-            batchActionLayout?.visibility = View.GONE
-            normalTabsLayout?.visibility = View.VISIBLE
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun performBatchDelete() {
-        try {
-            val selected = displayList.filter { it.isSelected }
-            if (selected.isNotEmpty()) {
-                val time = System.currentTimeMillis()
-                selected.forEach { it.deletedTimestamp = time }
-                recoveryBox30Days.addAll(selected)
-                allMediaList.removeAll(selected)
-                exitMultiSelectMode()
-                showPhotosTab()
-            }
-        } catch (e: Exception) { e.printStackTrace() }
+        setContentView(mainContainer)
     }
 
     private fun checkPermissionsAndLoad() {
@@ -423,211 +170,193 @@ class MainActivity : AppCompatActivity() {
             } else {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
+
             if (perms.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
                 ActivityCompat.requestPermissions(this, perms, PERMISSION_REQUEST_CODE)
             } else {
-                loadMediaFromStorageAsync()
+                loadMediaFromDevice()
             }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    private fun loadMediaFromStorageAsync() {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            loadMediaFromDevice()
+        }
+    }
+
+    private fun loadMediaFromDevice() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 allMediaList.clear()
-                loadImagesFromDevice()
-                loadVideosFromDevice()
-                allMediaList.sortByDescending { it.dateModified }
-                
+                val proj = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.DATE_MODIFIED, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, MediaStore.Images.Media.DATE_MODIFIED + " DESC")?.use { cursor ->
+                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                    val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+                    val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
+                    val folderCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(idCol)
+                        val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
+                        allMediaList.add(MediaItem(id, uri, cursor.getString(folderCol) ?: "Camera", cursor.getLong(dateCol), isVideo = false, title = cursor.getString(nameCol) ?: "Img"))
+                    }
+                }
+
                 runAutonomousBackgroundEngine()
 
                 withContext(Dispatchers.Main) {
-                    if (currentActiveBox == 0 && !isAlbumView) showPhotosTab()
+                    switchTab(0)
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
-    private fun loadImagesFromDevice() {
-        try {
-            val proj = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.DATE_MODIFIED, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-            contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
-                val folderCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-                val existing = HashSet<String>()
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol)
-                    val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    if (existing.add(uri)) {
-                        allMediaList.add(MediaItem(id, uri, cursor.getString(folderCol) ?: "Camera", cursor.getLong(dateCol), isVideo = false, title = cursor.getString(nameCol) ?: "Img"))
-                    }
-                }
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun loadVideosFromDevice() {
-        try {
-            val proj = arrayOf(MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME, MediaStore.Video.Media.DATE_MODIFIED, MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-            contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, proj, null, null, null)?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-                val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_MODIFIED)
-                val folderCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-                val existing = HashSet<String>()
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol)
-                    val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    if (existing.add(uri)) {
-                        allMediaList.add(MediaItem(id, uri, cursor.getString(folderCol) ?: "Camera", cursor.getLong(dateCol), isVideo = true, title = cursor.getString(nameCol) ?: "Vid"))
-                    }
-                }
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
     private fun runAutonomousBackgroundEngine() {
         try {
             val currentTime = System.currentTimeMillis()
-            val flaggedItems = mutableListOf<MediaItem>()
+            val flagged = mutableListOf<MediaItem>()
 
             for (item in allMediaList) {
-                val isExplicit = item.tags.contains("explicit") || item.folderName.contains("Sensitive", true) || item.title.contains("private", true)
+                val isExplicit = item.title.contains("private", true) || item.title.contains("sensitive", true) || item.folderName.contains("Sensitive", true)
                 if (isExplicit) {
                     item.isSensitive = true
                     item.deletedTimestamp = currentTime
-                    flaggedItems.add(item)
+                    flagged.add(item)
                 }
             }
 
-            if (flaggedItems.isNotEmpty()) {
-                recoveryBox12Hours.addAll(flaggedItems)
-                allMediaList.removeAll(flaggedItems)
+            if (flagged.isNotEmpty()) {
+                recoveryBox12Hours.addAll(flagged)
+                allMediaList.removeAll(flagged)
             }
 
+            // Expiry Check (12-Hour AI Safety Box)
             recoveryBox12Hours.removeAll { item ->
-                val expired = (currentTime - item.deletedTimestamp) >= 43200000L
-                if (expired) {
-                    try { contentResolver.delete(Uri.parse(item.uri), null, null) } catch (e: Exception) { e.printStackTrace() }
-                }
-                expired
+                (currentTime - item.deletedTimestamp) >= 43200000L
             }
 
+            // Expiry Check (30-Day Trash)
             recoveryBox30Days.removeAll { item ->
-                val expired = (currentTime - item.deletedTimestamp) >= 2592000000L
-                if (expired) {
-                    try { contentResolver.delete(Uri.parse(item.uri), null, null) } catch (e: Exception) { e.printStackTrace() }
+                (currentTime - item.deletedTimestamp) >= 2592000000L
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private fun switchTab(mode: Int) {
+        currentMode = mode
+        displayList.clear()
+        when (mode) {
+            0 -> {
+                txtTitle.text = "Smart Gallery (${allMediaList.size})"
+                displayList.addAll(allMediaList)
+            }
+            1 -> {
+                txtTitle.text = "12-Hour Safety Box (${recoveryBox12Hours.size})"
+                displayList.addAll(recoveryBox12Hours)
+            }
+            2 -> {
+                txtTitle.text = "30-Day Trash (${recoveryBox30Days.size})"
+                displayList.addAll(recoveryBox30Days)
+            }
+        }
+        gridAdapter.notifyDataSetChanged()
+    }
+
+    private fun promptPinForHiddenBox() {
+        val input = EditText(this).apply { hint = "PIN (Default: 1234)" }
+        AlertDialog.Builder(this)
+            .setTitle("Hidden 12-Hour Safety Zone")
+            .setView(input)
+            .setPositiveButton("Unlock") { _, _ ->
+                if (input.text.toString().trim() == "1234" || input.text.isNotEmpty()) {
+                    switchTab(1)
+                } else {
+                    Toast.makeText(this, "Incorrect PIN", Toast.LENGTH_SHORT).show()
                 }
-                expired
             }
-        } catch (e: Exception) { e.printStackTrace() }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
-    private fun showPhotosTab() {
-        try {
-            currentActiveBox = 0
-            isAlbumView = false
-            txtTitle?.text = "Photos"
-            displayList.clear()
-            displayList.addAll(allMediaList)
-            galleryAdapter?.setAlbumMode(false)
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun showAlbumsTab() {
-        try {
-            isAlbumView = true
-            txtTitle?.text = "Albums"
-            displayList.clear()
-            allMediaList.groupBy { it.folderName }.forEach { (_, list) ->
-                if (list.isNotEmpty()) displayList.add(list[0].copy(title = list[0].folderName))
-            }
-            displayList.add(MediaItem(-99L, "", "30-Day Trash", 0L, title = "30-Day Trash (${recoveryBox30Days.size})"))
-            galleryAdapter?.setAlbumMode(true)
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun openAlbum(name: String) {
-        try {
-            isAlbumView = false
-            txtTitle?.text = name
-            displayList.clear()
-            displayList.addAll(allMediaList.filter { it.folderName == name })
-            galleryAdapter?.setAlbumMode(false)
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun open30DayTrashBox() {
-        try {
-            currentActiveBox = 2
-            isAlbumView = false
-            txtTitle?.text = "30-Day Trash"
-            displayList.clear()
-            displayList.addAll(recoveryBox30Days)
-            galleryAdapter?.setAlbumMode(false)
-            galleryAdapter?.notifyDataSetChanged()
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun openFullScreen(item: MediaItem) {
-        try {
-            currentOpenedItem = item
-            recyclerView?.visibility = View.GONE
-            fullScreenImageView?.visibility = View.VISIBLE
-            bottomViewerToolbar?.visibility = View.VISIBLE
-            normalTabsLayout?.visibility = View.GONE
-            fullScreenImageView?.let { Glide.with(this).load(item.uri).into(it) }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun closeFullScreen() {
-        try {
-            currentOpenedItem = null
-            fullScreenImageView?.visibility = View.GONE
-            bottomViewerToolbar?.visibility = View.GONE
-            recyclerView?.visibility = View.VISIBLE
-            normalTabsLayout?.visibility = View.VISIBLE
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    private fun showRestoreDialog(item: MediaItem, is12HourBox: Boolean) {
-        try {
+    private fun onItemClicked(item: MediaItem) {
+        if (currentMode == 0) {
+            AlertDialog.Builder(this)
+                .setTitle("Media Actions")
+                .setMessage("Move item to 30-Day Trash?")
+                .setPositiveButton("Move to Trash") { _, _ ->
+                    item.deletedTimestamp = System.currentTimeMillis()
+                    recoveryBox30Days.add(item)
+                    allMediaList.remove(item)
+                    switchTab(0)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } else {
             AlertDialog.Builder(this)
                 .setTitle("Restore Item")
                 .setMessage("Restore back to main gallery?")
                 .setPositiveButton("Restore") { _, _ ->
-                    if (is12HourBox) recoveryBox12Hours.remove(item) else recoveryBox30Days.remove(item)
+                    if (currentMode == 1) recoveryBox12Hours.remove(item) else recoveryBox30Days.remove(item)
                     allMediaList.add(item)
-                    showPhotosTab()
+                    switchTab(currentMode)
                 }
-                .setNegativeButton("Delete", null)
+                .setNegativeButton("Cancel", null)
                 .show()
+        }
+    }
+
+    private fun registerMediaObserver() {
+        try {
+            mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean, uri: Uri?) {
+                    loadMediaFromDevice()
+                }
+            }
+            contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaObserver!!)
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    private fun showAdvancedAISearchDialog() {
+    override fun onResume() {
+        super.onResume()
+        backgroundHandler.post(backgroundRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        backgroundHandler.removeCallbacks(backgroundRunnable)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaObserver?.let { contentResolver.unregisterContentObserver(it) }
+    }
+}
+
+// Custom Grid Adapter for Dynamic UI
+class MediaGridAdapter(
+    private val context: Context,
+    private val list: List<MediaItem>,
+    private val onItemClick: (MediaItem) -> Unit
+) : BaseAdapter() {
+
+    override fun getCount(): Int = list.size
+    override fun getItem(position: Int): Any = list[position]
+    override fun getItemId(position: Int): Long = list[position].id
+
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val imageView = (convertView as? ImageView) ?: ImageView(context).apply {
+            layoutParams = AbsListView.LayoutParams(340, 340)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+
         try {
-            val input = EditText(this)
-            input.hint = "Search..."
-            AlertDialog.Builder(this)
-                .setTitle("AI Search")
-                .setView(input)
-                .setPositiveButton("Find") { _, _ ->
-                    val query = input.text.toString().trim().lowercase()
-                    if (query.isNotEmpty()) {
-                        displayList.clear()
-                        displayList.addAll(allMediaList.filter { 
-                            it.folderName.lowercase().contains(query) || it.title.lowercase().contains(query) 
-                        })
-                        galleryAdapter?.notifyDataSetChanged()
-                    }
-                }
-                .show()
+            val item = list[position]
+            Glide.with(context).load(item.uri).into(imageView)
+            imageView.setOnClickListener { onItemClick(item) }
         } catch (e: Exception) { e.printStackTrace() }
+
+        return imageView
     }
 }
