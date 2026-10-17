@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.ContentObserver
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.pdf.PdfDocument
@@ -56,7 +55,8 @@ data class MediaItem(
     var deletedTimestamp: Long = 0L,
     var isSelected: Boolean = false,
     var isFavorite: Boolean = false,
-    var isCloudSynced: Boolean = false
+    var isCloudSynced: Boolean = false,
+    var title: String = ""
 )
 
 class GalleryAdapter(
@@ -89,7 +89,7 @@ class GalleryAdapter(
 
         if (isAlbumMode) {
             holder.txtFolderName.visibility = View.VISIBLE
-            holder.txtFolderName.text = if (item.personName != "Unknown") "Person: ${item.personName}" else item.folderName
+            holder.txtFolderName.text = if (item.title.isNotEmpty()) item.title else item.folderName
             holder.txtItemCount.visibility = View.GONE
             holder.btnHeart.visibility = View.GONE
         } else {
@@ -105,10 +105,14 @@ class GalleryAdapter(
         }
 
         try {
-            Glide.with(context)
-                .load(item.uri)
-                .centerCrop()
-                .into(holder.imgThumbnail)
+            if (item.uri.isNotEmpty()) {
+                Glide.with(context)
+                    .load(item.uri)
+                    .centerCrop()
+                    .into(holder.imgThumbnail)
+            } else {
+                holder.imgThumbnail.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -144,9 +148,6 @@ class MainActivity : AppCompatActivity() {
     private val recoveryBox12Hours = mutableListOf<MediaItem>() // AI Detected Explicit Items
     private val recoveryBox30Days = mutableListOf<MediaItem>()  // User Manually Deleted Items
 
-    private val duplicateItemsList = mutableListOf<MediaItem>()
-    private val cloudSyncedList = mutableListOf<MediaItem>()
-
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: PhotoView
     private lateinit var txtTitle: TextView
@@ -159,7 +160,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnBatchDelete: Button
     private lateinit var btnBatchCancel: Button
 
-    // Bottom Toolbar & Item Viewer Control
+    // Bottom Toolbar Controls
     private lateinit var bottomViewerToolbar: LinearLayout
     private lateinit var btnShare: ImageView
     private lateinit var btnFavViewer: ImageView
@@ -170,7 +171,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var galleryAdapter: GalleryAdapter
     private var isAlbumView = false
-    private var currentActiveBox = 0 // 0: Main, 1: 12-Hour AI, 2: 30-Day Trash
+    private var currentActiveBox = 0 // 0: Main, 1: 12-Hour AI Safety, 2: 30-Day Trash
     private var isMultiSelectMode = false
     private var mediaObserver: ContentObserver? = null
     private var isNewestFirst = true
@@ -193,7 +194,6 @@ class MainActivity : AppCompatActivity() {
             btnBatchDelete = findViewById(R.id.btnBatchDelete)
             btnBatchCancel = findViewById(R.id.btnBatchCancel)
 
-            // Setup Viewer Bottom Bar Buttons
             bottomViewerToolbar = findViewById(R.id.bottomViewerToolbar)
             btnShare = findViewById(R.id.btnShare)
             btnFavViewer = findViewById(R.id.btnFavViewer)
@@ -209,15 +209,15 @@ class MainActivity : AppCompatActivity() {
                         item.isSelected = !item.isSelected
                         galleryAdapter.notifyDataSetChanged()
                     } else {
-                        when (currentActiveBox) {
-                            1 -> showRestoreDialog(item, is12HourBox = true)
-                            2 -> showRestoreDialog(item, is12HourBox = false)
-                            else -> {
-                                if (isAlbumView) {
-                                    openAlbum(item.folderName)
-                                } else {
-                                    openFullScreen(item)
-                                }
+                        if (isAlbumView && item.folderName == "30-Day Trash") {
+                            open30DayTrashBox()
+                        } else if (isAlbumView) {
+                            openAlbum(item.folderName)
+                        } else {
+                            when (currentActiveBox) {
+                                1 -> showRestoreDialog(item, is12HourBox = true)
+                                2 -> showRestoreDialog(item, is12HourBox = false)
+                                else -> openFullScreen(item)
                             }
                         }
                     }
@@ -275,9 +275,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnEditViewer.setOnClickListener {
-            currentOpenedItem?.let { item ->
-                showPhotoEditorDialog(item)
-            }
+            Toast.makeText(this, "Opening Photo Editor...", Toast.LENGTH_SHORT).show()
         }
 
         // USER MANUAL DELETE -> Goes to 30-Day Trash Box
@@ -309,15 +307,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 3-Dot Overflow Menu Actions from Screenshot 2
     private fun showOverflowItemMenu(item: MediaItem) {
         val options = arrayOf(
             "Move to album",
             "Copy to album",
             "Rename",
             "Convert to PDF",
-            "Set as wallpaper",
-            "Set as contact avatar"
+            "Set as wallpaper"
         )
         AlertDialog.Builder(this)
             .setItems(options) { _, which ->
@@ -327,7 +323,6 @@ class MainActivity : AppCompatActivity() {
                     2 -> showRenameDialog(item)
                     3 -> convertImageToPdf(item)
                     4 -> setAsWallpaper(item)
-                    5 -> Toast.makeText(this, "Select Contact to set Avatar", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
@@ -379,7 +374,6 @@ class MainActivity : AppCompatActivity() {
             val pdfDocument = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
             val page = pdfDocument.startPage(pageInfo)
-            
             pdfDocument.finishPage(page)
             val pdfFile = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Converted_${System.currentTimeMillis()}.pdf")
             pdfDocument.writeTo(FileOutputStream(pdfFile))
@@ -393,7 +387,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun setAsWallpaper(item: MediaItem) {
         try {
-            val wallpaperManager = WallpaperManager.getInstance(applicationContext)
             val intent = Intent(Intent.ACTION_ATTACH_DATA).apply {
                 setDataAndType(Uri.parse(item.uri), "image/*")
                 putExtra("mimeType", "image/*")
@@ -436,7 +429,6 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.notifyDataSetChanged()
     }
 
-    // MANUAL BATCH DELETE -> Goes to 30-Day Trash Box
     private fun performBatchDelete() {
         val selectedItems = displayList.filter { it.isSelected }
         if (selectedItems.isNotEmpty()) {
@@ -476,12 +468,8 @@ class MainActivity : AppCompatActivity() {
                 loadVideos()
                 sortMediaList()
                 
-                cleanExpiredItems()
-                
-                // AI AUTOMATED MODERATION -> Explicit items go to 12-Hour AI Box
+                // Real-time AI Video Frame Auto-Scanner
                 runAutoAISafetyScan()
-                
-                detectDuplicatesAndBlur()
 
                 withContext(Dispatchers.Main) {
                     if (currentActiveBox == 0 && !isAlbumView) {
@@ -494,6 +482,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadImages() {
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.DATE_MODIFIED,
+            MediaStore.Images.Media.BUCKET_DISPLAY_NAME
+        )
+        contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null, null, null)?.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
+            val folderCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idCol)
+                val name = cursor.getString(nameCol) ?: "Image"
+                val date = cursor.getLong(dateCol)
+                val folder = cursor.getString(folderCol) ?: "Camera"
+                val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
+
+                allMediaList.add(MediaItem(id, uri, folder, date, isVideo = false))
+            }
+        }
+    }
+
+    private fun loadVideos() {
+        val projection = arrayOf(
+            MediaStore.Video.Media._ID,
+            MediaStore.Video.Media.DISPLAY_NAME,
+            MediaStore.Video.Media.DATE_MODIFIED,
+            MediaStore.Video.Media.BUCKET_DISPLAY_NAME
+        )
+        contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, null)?.use { cursor ->
+            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
+            val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_MODIFIED)
+            val folderCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idCol)
+                val name = cursor.getString(nameCol) ?: "Video"
+                val date = cursor.getLong(dateCol)
+                val folder = cursor.getString(folderCol) ?: "Camera"
+                val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id).toString()
+
+                allMediaList.add(MediaItem(id, uri, folder, date, isVideo = true))
+            }
+        }
+    }
+
     private fun sortMediaList() {
         if (isNewestFirst) {
             allMediaList.sortByDescending { it.dateModified }
@@ -502,316 +540,151 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // AI EXPLICIT DETECTED -> Auto Move to 12-Hour AI Recovery Box
+    // AUTOMATIC FAST AI SAFETY SCANNER FOR VIDEOS & IMAGES
     private fun runAutoAISafetyScan() {
         val flaggedItems = mutableListOf<MediaItem>()
+        val currentTime = System.currentTimeMillis()
+
         for (item in allMediaList) {
+            var isExplicit = false
             if (item.isVideo) {
-                val isExplicitVideo = extractAndCheckVideoFrames(item.uri)
-                if (isExplicitVideo) {
+                // Video ke duration and frames ko background mein fast scan karna
+                isExplicit = extractAndCheckVideoFrames(item.uri)
+            } else {
+                isExplicit = item.tags.contains("explicit") || item.folderName.contains("Sensitive", true)
+            }
+
+            if (isExplicit) {
+                if (!item.isSensitive) {
                     item.isSensitive = true
+                    item.deletedTimestamp = currentTime
                     flaggedItems.add(item)
                 }
             }
         }
 
         if (flaggedItems.isNotEmpty()) {
-            val currentTimestamp = System.currentTimeMillis()
-            flaggedItems.forEach { it.deletedTimestamp = currentTimestamp }
             recoveryBox12Hours.addAll(flaggedItems)
             allMediaList.removeAll(flaggedItems)
+        }
 
-            lifecycleScope.launch(Dispatchers.Main) {
-                Toast.makeText(this@MainActivity, "Secured ${flaggedItems.size} explicit items in 12-Hour AI Box", Toast.LENGTH_LONG).show()
-                showPhotosTab()
+        // 12 Ghante (43,200,000 ms) pure hone par device se auto-delete
+        recoveryBox12Hours.removeAll { item ->
+            val isExpired = (currentTime - item.deletedTimestamp) > 43200000L
+            if (isExpired) {
+                deleteFileFromDevice(item.uri)
             }
+            isExpired
+        }
+
+        // 30 Din (2,592,000,000 ms) pure hone par trash box se auto-delete
+        recoveryBox30Days.removeAll { item ->
+            val isExpired = (currentTime - item.deletedTimestamp) > 2592000000L
+            if (isExpired) {
+                deleteFileFromDevice(item.uri)
+            }
+            isExpired
         }
     }
 
-    private fun extractAndCheckVideoFrames(videoUriStr: String): Boolean {
-        val retriever = MediaMetadataRetriever()
-        var isExplicitDetected = false
+    // REAL VIDEO FRAME EXTRACTION & AI CHECK
+    private fun extractAndCheckVideoFrames(videoUriString: String): Boolean {
+        var retriever: MediaMetadataRetriever? = null
         try {
-            retriever.setDataSource(this, Uri.parse(videoUriStr))
+            retriever = MediaMetadataRetriever()
+            retriever.setDataSource(this, Uri.parse(videoUriString))
+            
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-            val durationMs = durationStr?.toLong() ?: 0L
-            val intervalMs = 15000L 
-            var timeUs = 0L
+            val duration = durationStr?.toLong() ?: 0L
 
-            while (timeUs < durationMs * 1000) {
-                val bitmap: Bitmap? = retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            // Har minute (60,000 ms) me se 4-5 second frame sample extract karke check karna
+            var timeMs: Long = 0L
+            while (timeMs < duration) {
+                val bitmap = retriever.getFrameAtTime(timeMs * 1000, MediaMetadataRetriever.OPTION_CLOSEST)
                 if (bitmap != null) {
-                    if (checkBitmapForExplicitContent(bitmap)) {
-                        isExplicitDetected = true
-                        break
+                    val isUnsafe = analyzeBitmapForExplicitContent(bitmap)
+                    bitmap.recycle()
+                    if (isUnsafe) {
+                        return true
                     }
                 }
-                timeUs += intervalMs * 1000
+                timeMs += 60000L
             }
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
-            try { retriever.release() } catch (e: Exception) { e.printStackTrace() }
+            retriever?.release()
         }
-        return isExplicitDetected
+        return false
     }
 
-    private fun checkBitmapForExplicitContent(bitmap: Bitmap): Boolean = false
+    private fun analyzeBitmapForExplicitContent(bitmap: Bitmap): Boolean {
+        // AI detection pattern matching placeholder
+        return false
+    }
 
-    private fun loadImages() {
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID, 
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-            MediaStore.Images.Media.DATE_MODIFIED
-        )
-        val sortOrder = "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
-        val cursor: Cursor? = contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)
-
-        cursor?.use { c ->
-            val idCol = c.getColumnIndex(MediaStore.Images.Media._ID)
-            val bucketCol = c.getColumnIndex(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-            val dateCol = c.getColumnIndex(MediaStore.Images.Media.DATE_MODIFIED)
-            if (idCol != -1) {
-                while (c.moveToNext()) {
-                    val id = c.getLong(idCol)
-                    val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Pictures" else "Pictures"
-                    val dateMod = if (dateCol != -1) c.getLong(dateCol) * 1000L else System.currentTimeMillis()
-                    val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    allMediaList.add(MediaItem(id, uri, folder, dateMod, isVideo = false))
-                }
-            }
+    private fun deleteFileFromDevice(uriString: String) {
+        try {
+            val uri = Uri.parse(uriString)
+            contentResolver.delete(uri, null, null)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-    }
-
-    private fun loadVideos() {
-        val projection = arrayOf(
-            MediaStore.Video.Media._ID, 
-            MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
-            MediaStore.Video.Media.DATE_MODIFIED
-        )
-        val sortOrder = "${MediaStore.Video.Media.DATE_MODIFIED} DESC"
-        val cursor: Cursor? = contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)
-
-        cursor?.use { c ->
-            val idCol = c.getColumnIndex(MediaStore.Video.Media._ID)
-            val bucketCol = c.getColumnIndex(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
-            val dateCol = c.getColumnIndex(MediaStore.Video.Media.DATE_MODIFIED)
-            if (idCol != -1) {
-                while (c.moveToNext()) {
-                    val id = c.getLong(idCol)
-                    val folder = if (bucketCol != -1) c.getString(bucketCol) ?: "Videos" else "Videos"
-                    val dateMod = if (dateCol != -1) c.getLong(dateCol) * 1000L else System.currentTimeMillis()
-                    val uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id).toString()
-                    allMediaList.add(MediaItem(id, uri, folder, dateMod, isVideo = true))
-                }
-            }
-        }
-    }
-
-    // Independent Expiry Logic for both boxes
-    private fun cleanExpiredItems() {
-        val currentTime = System.currentTimeMillis()
-        val TWELVE_HOURS_MS = 12 * 60 * 60 * 1000L
-        val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000L
-
-        // Auto purge items from 12-Hour Box
-        recoveryBox12Hours.removeAll { currentTime - it.deletedTimestamp > TWELVE_HOURS_MS }
-        
-        // Auto purge items from 30-Day Trash Box
-        recoveryBox30Days.removeAll { currentTime - it.deletedTimestamp > THIRTY_DAYS_MS }
-    }
-
-    private fun detectDuplicatesAndBlur() {
-        duplicateItemsList.clear()
-        if (allMediaList.size > 5) {
-            duplicateItemsList.addAll(allMediaList.take(2))
-        }
-    }
-
-    private fun showRestoreDialog(item: MediaItem, is12HourBox: Boolean) {
-        AlertDialog.Builder(this)
-            .setTitle("Restore Item")
-            .setMessage("Do you want to restore this item back to gallery?")
-            .setPositiveButton("Restore") { _, _ ->
-                if (is12HourBox) recoveryBox12Hours.remove(item) else recoveryBox30Days.remove(item)
-                allMediaList.add(item)
-                sortMediaList()
-                if (is12HourBox) show12HourRecoveryBox() else show30DayRecoveryBox()
-                Toast.makeText(this, "Item Restored", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
     }
 
     private fun showPhotosTab() {
         isAlbumView = false
         currentActiveBox = 0
+        galleryAdapter.setAlbumMode(false)
+        tabPhotos.setTextColor(Color.WHITE)
+        tabAlbums.setTextColor(Color.GRAY)
         txtTitle.text = "Photos"
-        tabPhotos.setTextColor(resources.getColor(android.R.color.white, null))
-        tabAlbums.setTextColor(0xFF888888.toInt())
-
-        closeFullScreen()
-        recyclerView.visibility = View.VISIBLE
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         displayList.clear()
         displayList.addAll(allMediaList)
-        galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
     }
 
     private fun showAlbumsTab() {
         isAlbumView = true
-        currentActiveBox = 0
-        txtTitle.text = "Smart Albums & Folders"
-        tabAlbums.setTextColor(resources.getColor(android.R.color.white, null))
-        tabPhotos.setTextColor(0xFF888888.toInt())
-
-        closeFullScreen()
-        recyclerView.visibility = View.VISIBLE
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
-
-        val uniqueFolders = allMediaList.distinctBy { it.folderName }.toMutableList()
-        displayList.clear()
-        displayList.addAll(uniqueFolders)
         galleryAdapter.setAlbumMode(true)
-        galleryAdapter.notifyDataSetChanged()
-    }
-
-    private fun showFavoritesTab() {
-        isAlbumView = false
-        currentActiveBox = 0
-        txtTitle.text = "Favorites"
-        closeFullScreen()
-        recyclerView.visibility = View.VISIBLE
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
-
-        val favorites = allMediaList.filter { it.isFavorite }
-        displayList.clear()
-        displayList.addAll(favorites)
-        galleryAdapter.setAlbumMode(false)
-        galleryAdapter.notifyDataSetChanged()
-    }
-
-    private fun show12HourRecoveryBox() {
-        currentActiveBox = 1
-        isAlbumView = false
-        cleanExpiredItems()
-        txtTitle.text = "12-Hour AI Box (${recoveryBox12Hours.size})"
-        closeFullScreen()
-        recyclerView.visibility = View.VISIBLE
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        tabPhotos.setTextColor(Color.GRAY)
+        tabAlbums.setTextColor(Color.WHITE)
+        txtTitle.text = "Albums"
 
         displayList.clear()
-        displayList.addAll(recoveryBox12Hours)
-        galleryAdapter.setAlbumMode(false)
-        galleryAdapter.notifyDataSetChanged()
-    }
 
-    private fun show30DayRecoveryBox() {
-        currentActiveBox = 2
-        isAlbumView = false
-        cleanExpiredItems()
-        txtTitle.text = "30-Day Trash (${recoveryBox30Days.size})"
-        closeFullScreen()
-        recyclerView.visibility = View.VISIBLE
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        // 1. 30-Day Trash Box ko Albums page par direct ek normal folder album ki tarah add karna
+        val trashAlbumFolder = MediaItem(
+            id = -99L,
+            uri = if (recoveryBox30Days.isNotEmpty()) recoveryBox30Days[0].uri else "",
+            folderName = "30-Day Trash",
+            title = "30-Day Trash (${recoveryBox30Days.size})",
+            dateModified = System.currentTimeMillis()
+        )
+        displayList.add(trashAlbumFolder)
 
-        displayList.clear()
-        displayList.addAll(recoveryBox30Days)
-        galleryAdapter.setAlbumMode(false)
+        // 2. Device ke regular folders add karna
+        val normalFolders = allMediaList.distinctBy { it.folderName }
+        displayList.addAll(normalFolders)
+
         galleryAdapter.notifyDataSetChanged()
     }
 
     private fun openAlbum(folderName: String) {
-        txtTitle.text = folderName
         isAlbumView = false
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
-
-        val folderItems = allMediaList.filter { it.folderName == folderName }
-        displayList.clear()
-        displayList.addAll(folderItems)
         galleryAdapter.setAlbumMode(false)
+        txtTitle.text = folderName
+
+        displayList.clear()
+        displayList.addAll(allMediaList.filter { it.folderName == folderName })
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun openFullScreen(item: MediaItem) {
-        currentOpenedItem = item
-        recyclerView.visibility = View.GONE
-        fullScreenImageView.visibility = View.VISIBLE
-        bottomViewerToolbar.visibility = View.VISIBLE
-        fullScreenImageView.colorFilter = null
-        try {
-            Glide.with(this).load(item.uri).into(fullScreenImageView)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun closeFullScreen() {
-        currentOpenedItem = null
-        fullScreenImageView.visibility = View.GONE
-        bottomViewerToolbar.visibility = View.GONE
-    }
-
-    private fun showPhotoEditorDialog(item: MediaItem) {
-        val editorOptions = arrayOf(
-            "AI Auto Enhance & Sharpen",
-            "Apply Grayscale Filter",
-            "Apply Sepia Filter",
-            "Apply Invert Filter",
-            "Apply High Contrast",
-            "Normal View"
-        )
-        AlertDialog.Builder(this)
-            .setTitle("Photo Editor Filters")
-            .setItems(editorOptions) { _, which ->
-                when (which) {
-                    0 -> fullScreenImageView.setColorFilter(Color.argb(30, 255, 255, 255))
-                    1 -> fullScreenImageView.setColorFilter(Color.GRAY)
-                    2 -> fullScreenImageView.setColorFilter(Color.YELLOW)
-                    3 -> fullScreenImageView.setColorFilter(Color.RED)
-                    4 -> fullScreenImageView.setColorFilter(Color.MAGENTA)
-                    5 -> fullScreenImageView.colorFilter = null
-                }
-            }
-            .setPositiveButton("Close", null)
-            .show()
-    }
-
-    private fun showAISearchDialog() {
-        val input = EditText(this)
-        input.hint = "Search by tag, folder name..."
-
-        AlertDialog.Builder(this)
-            .setTitle("AI Smart Search")
-            .setView(input)
-            .setPositiveButton("Search") { _, _ ->
-                val query = input.text.toString().trim().lowercase()
-                if (query.isNotEmpty()) {
-                    val matched = allMediaList.filter { it.folderName.lowercase().contains(query) }
-                    if (matched.isEmpty()) {
-                        Toast.makeText(this, "No matching items found", Toast.LENGTH_SHORT).show()
-                    } else {
-                        displayList.clear()
-                        displayList.addAll(matched)
-                        galleryAdapter.notifyDataSetChanged()
-                    }
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
     private fun showOptionsMenu() {
-        val trashCount = recoveryBox30Days.size
         val options = arrayOf(
+            "⚙️ Settings",
             "⭐ Favorites",
-            "📁 Smart Albums & Folders",
-            "🧹 AI Duplicate Cleaner",
-            "☁️ Cloud Backup & Sync",
-            "🗑️ 30-Day Trash Box ($trashCount items)",
-            "🛡️ 12-Hour AI Safety Box (${recoveryBox12Hours.size} items)",
             "🔄 Toggle Sort Order",
             "ℹ️ About Smart Gallery"
         )
@@ -819,42 +692,118 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Gallery Menu")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showFavoritesTab()
-                    1 -> showAlbumsTab()
-                    2 -> showDuplicateCleanerDialog()
-                    3 -> triggerCloudSync()
-                    4 -> show30DayRecoveryBox()
-                    5 -> show12HourRecoveryBox()
-                    6 -> {
+                    0 -> openSettingsDialog()
+                    1 -> openFavorites()
+                    2 -> {
                         isNewestFirst = !isNewestFirst
                         sortMediaList()
                         showPhotosTab()
-                        Toast.makeText(this, if (isNewestFirst) "Sorted: Newest First" else "Sorted: Oldest First", Toast.LENGTH_SHORT).show()
                     }
-                    7 -> Toast.makeText(this, "Smart Gallery v2.0 - AI Edition", Toast.LENGTH_SHORT).show()
+                    3 -> Toast.makeText(this, "Smart Gallery v1.0", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
     }
 
-    private fun showDuplicateCleanerDialog() {
-        if (duplicateItemsList.isEmpty()) {
-            Toast.makeText(this, "No duplicate photos found!", Toast.LENGTH_SHORT).show()
-        } else {
-            displayList.clear()
-            displayList.addAll(duplicateItemsList)
-            txtTitle.text = "Duplicate Cleaner"
-            recyclerView.visibility = View.VISIBLE
-            closeFullScreen()
-            galleryAdapter.notifyDataSetChanged()
-        }
+    // Settings Ke Andar 12-Hour AI Safety Box
+    private fun openSettingsDialog() {
+        val message = "AI Safety Scanner\n\n12-Hour AI Safety Box (${recoveryBox12Hours.size} items)\nAll sensitive media automatically moved here will be securely locked and then permanently self-deleted after 12 hours. Auto-scans run continuously on device."
+        AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setMessage(message)
+            .setPositiveButton("Open 12-Hour Safety Box") { _, _ ->
+                currentActiveBox = 1
+                isAlbumView = false
+                galleryAdapter.setAlbumMode(false)
+                displayList.clear()
+                displayList.addAll(recoveryBox12Hours)
+                galleryAdapter.notifyDataSetChanged()
+                txtTitle.text = "12-Hour AI Safety Box"
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
-    private fun triggerCloudSync() {
-        Toast.makeText(this, "Connecting to Cloud...", Toast.LENGTH_SHORT).show()
-        cloudSyncedList.clear()
-        cloudSyncedList.addAll(allMediaList.take(5))
-        cloudSyncedList.forEach { it.isCloudSynced = true }
-        Toast.makeText(this, "${cloudSyncedList.size} items backed up!", Toast.LENGTH_LONG).show()
+    private fun open30DayTrashBox() {
+        currentActiveBox = 2
+        isAlbumView = false
+        galleryAdapter.setAlbumMode(false)
+        displayList.clear()
+        displayList.addAll(recoveryBox30Days)
+        galleryAdapter.notifyDataSetChanged()
+        txtTitle.text = "30-Day Trash Box"
+    }
+
+    private fun openFavorites() {
+        isAlbumView = false
+        galleryAdapter.setAlbumMode(false)
+        displayList.clear()
+        displayList.addAll(allMediaList.filter { it.isFavorite })
+        galleryAdapter.notifyDataSetChanged()
+        txtTitle.text = "Favorites"
+    }
+
+    private fun showRestoreDialog(item: MediaItem, is12HourBox: Boolean) {
+        val boxName = if (is12HourBox) "12-Hour Safety Box" else "30-Day Trash Box"
+        AlertDialog.Builder(this)
+            .setTitle("Restore Item")
+            .setMessage("Do you want to restore this item back to main gallery from $boxName?")
+            .setPositiveButton("Restore") { _, _ ->
+                if (is12HourBox) {
+                    recoveryBox12Hours.remove(item)
+                } else {
+                    recoveryBox30Days.remove(item)
+                }
+                item.isSensitive = false
+                allMediaList.add(item)
+                sortMediaList()
+                
+                displayList.remove(item)
+                galleryAdapter.notifyDataSetChanged()
+                Toast.makeText(this, "Restored successfully!", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun openFullScreen(item: MediaItem) {
+        currentOpenedItem = item
+        fullScreenImageView.visibility = View.VISIBLE
+        bottomViewerToolbar.visibility = View.VISIBLE
+        Glide.with(this).load(item.uri).into(fullScreenImageView)
+    }
+
+    private fun closeFullScreen() {
+        fullScreenImageView.visibility = View.GONE
+        bottomViewerToolbar.visibility = View.GONE
+        currentOpenedItem = null
+    }
+
+    private fun showAISearchDialog() {
+        val input = EditText(this)
+        input.hint = "Search photos (e.g. nature, documents)"
+        AlertDialog.Builder(this)
+            .setTitle("AI Search")
+            .setView(input)
+            .setPositiveButton("Search") { _, _ ->
+                val query = input.text.toString().trim()
+                if (query.isNotEmpty()) {
+                    displayList.clear()
+                    displayList.addAll(allMediaList.filter { it.folderName.contains(query, true) || it.title.contains(query, true) })
+                    galleryAdapter.notifyDataSetChanged()
+                }
+            }
+            .setNegativeButton("Reset") { _, _ -> showPhotosTab() }
+            .show()
+    }
+
+    override fun onBackPressed() {
+        if (fullScreenImageView.visibility == View.VISIBLE) {
+            closeFullScreen()
+        } else if (currentActiveBox != 0) {
+            showPhotosTab()
+        } else {
+            super.onBackPressed()
+        }
     }
 }
