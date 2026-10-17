@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -12,10 +12,23 @@
         android:scaleType="centerCrop"
         android:background="#222222" />
 
+    <!-- Favorite/Heart Icon for Gallery Items -->
+    <ImageView
+        android:id="@+id/btnHeart"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="6dp"
+        android:padding="4dp"
+        android:src="@android:drawable/btn_star_big_off"
+        android:background="#80000000" />
+
     <TextView
         android:id="@+id/txtFolderName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/imgThumbnail"
         android:textColor="@android:color/white"
         android:textSize="13sp"
         android:textStyle="bold"
@@ -26,7 +39,8 @@
         android:id="@+id/txtItemCount"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/txtFolderName"
         android:textColor="#AAAAAA"
         android:textSize="11sp" />
 
-</LinearLayout>
+</RelativeLayout>
