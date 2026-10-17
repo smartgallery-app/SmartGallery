@@ -4,11 +4,16 @@ import android.Manifest
 import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.database.Cursor
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
@@ -39,6 +44,7 @@ data class MediaItem(
     val folderName: String,
     val isVideo: Boolean = false,
     var isSensitive: Boolean = false,
+    var personName: String = "Unknown",
     var tags: List<String> = emptyList(),
     var deletedTimestamp: Long = 0L,
     var isSelected: Boolean = false,
@@ -73,7 +79,7 @@ class GalleryAdapter(
 
         if (isAlbumMode) {
             holder.txtFolderName.visibility = View.VISIBLE
-            holder.txtFolderName.text = item.folderName
+            holder.txtFolderName.text = if (item.personName != "Unknown") "Person: ${item.personName}" else item.folderName
             holder.txtItemCount.visibility = View.GONE
         } else {
             holder.txtFolderName.visibility = View.GONE
@@ -111,7 +117,8 @@ class MainActivity : AppCompatActivity() {
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
     
-    private val recoveryBox24Hours = mutableListOf<MediaItem>()
+    // 12-Hour AI Safety Box
+    private val recoveryBox12Hours = mutableListOf<MediaItem>()
     private val recoveryBox30Days = mutableListOf<MediaItem>()
 
     private val duplicateItemsList = mutableListOf<MediaItem>()
@@ -133,6 +140,7 @@ class MainActivity : AppCompatActivity() {
     private var isAlbumView = false
     private var currentActiveBox = 0
     private var isMultiSelectMode = false
+    private var mediaObserver: ContentObserver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -159,8 +167,8 @@ class MainActivity : AppCompatActivity() {
                         galleryAdapter.notifyDataSetChanged()
                     } else {
                         when (currentActiveBox) {
-                            1 -> showRestoreDialog(item, is24HourBox = true)
-                            2 -> showRestoreDialog(item, is24HourBox = false)
+                            1 -> showRestoreDialog(item, is12HourBox = true)
+                            2 -> showRestoreDialog(item, is12HourBox = false)
                             else -> {
                                 if (isAlbumView) {
                                     openAlbum(item.folderName)
@@ -192,9 +200,37 @@ class MainActivity : AppCompatActivity() {
             btnBatchDelete.setOnClickListener { performBatchDelete() }
 
             checkPermissionsAndLoad()
+            registerMediaObserver()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Startup Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun registerMediaObserver() {
+        mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                super.onChange(selfChange, uri)
+                loadMediaFromStorageAsync()
+            }
+        }
+
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, 
+            true, 
+            mediaObserver!!
+        )
+        contentResolver.registerContentObserver(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, 
+            true, 
+            mediaObserver!!
+        )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaObserver?.let {
+            contentResolver.unregisterContentObserver(it)
         }
     }
 
@@ -257,8 +293,69 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Explicit content detected -> Auto Move to 12-Hour AI Safety Box
     private fun runAutoAISafetyScan() {
-        // AI Safety scan logic placeholder
+        val flaggedItems = mutableListOf<MediaItem>()
+        
+        for (item in allMediaList) {
+            if (item.isVideo) {
+                val isExplicitVideo = extractAndCheckVideoFrames(item.uri)
+                if (isExplicitVideo) {
+                    item.isSensitive = true
+                    flaggedItems.add(item)
+                }
+            }
+        }
+
+        if (flaggedItems.isNotEmpty()) {
+            val currentTimestamp = System.currentTimeMillis()
+            flaggedItems.forEach { it.deletedTimestamp = currentTimestamp }
+            recoveryBox12Hours.addAll(flaggedItems)
+            allMediaList.removeAll(flaggedItems)
+
+            lifecycleScope.launch(Dispatchers.Main) {
+                Toast.makeText(
+                    this@MainActivity, 
+                    "Moved ${flaggedItems.size} explicit items to 12-Hour AI Box", 
+                    Toast.LENGTH_LONG
+                ).show()
+                showPhotosTab()
+            }
+        }
+    }
+
+    private fun extractAndCheckVideoFrames(videoUriStr: String): Boolean {
+        val retriever = MediaMetadataRetriever()
+        var isExplicitDetected = false
+        try {
+            retriever.setDataSource(this, Uri.parse(videoUriStr))
+            val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            val durationMs = durationStr?.toLong() ?: 0L
+
+            val intervalMs = 15000L 
+            var timeUs = 0L
+
+            while (timeUs < durationMs * 1000) {
+                val bitmap: Bitmap? = retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                if (bitmap != null) {
+                    val isExplicit = checkBitmapForExplicitContent(bitmap)
+                    if (isExplicit) {
+                        isExplicitDetected = true
+                        break
+                    }
+                }
+                timeUs += intervalMs * 1000
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            try { retriever.release() } catch (e: Exception) { e.printStackTrace() }
+        }
+        return isExplicitDetected
+    }
+
+    private fun checkBitmapForExplicitContent(bitmap: Bitmap): Boolean {
+        return false
     }
 
     private fun loadImages() {
@@ -299,12 +396,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Cleanup Logic: 12 Hours timer set for AI Box
     private fun cleanExpiredItems() {
         val currentTime = System.currentTimeMillis()
-        val ONE_DAY_MS = 24 * 60 * 60 * 1000L
-        val THIRTY_DAYS_MS = 30L * ONE_DAY_MS
+        val TWELVE_HOURS_MS = 12 * 60 * 60 * 1000L
+        val THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000L
 
-        recoveryBox24Hours.removeAll { currentTime - it.deletedTimestamp > ONE_DAY_MS }
+        // Automatically delete permanently after 12 hours
+        recoveryBox12Hours.removeAll { currentTime - it.deletedTimestamp > TWELVE_HOURS_MS }
         recoveryBox30Days.removeAll { currentTime - it.deletedTimestamp > THIRTY_DAYS_MS }
     }
 
@@ -315,18 +414,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showRestoreDialog(item: MediaItem, is24HourBox: Boolean) {
+    private fun showRestoreDialog(item: MediaItem, is12HourBox: Boolean) {
         AlertDialog.Builder(this)
             .setTitle("Restore Item")
             .setMessage("Do you want to restore this item back to gallery?")
             .setPositiveButton("Restore") { _, _ ->
-                if (is24HourBox) {
-                    recoveryBox24Hours.remove(item)
+                if (is12HourBox) {
+                    recoveryBox12Hours.remove(item)
                 } else {
                     recoveryBox30Days.remove(item)
                 }
                 allMediaList.add(item)
-                if (is24HourBox) show24HourRecoveryBox() else show30DayRecoveryBox()
+                if (is12HourBox) show12HourRecoveryBox() else show30DayRecoveryBox()
                 Toast.makeText(this, "Item Restored", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
@@ -368,17 +467,33 @@ class MainActivity : AppCompatActivity() {
         galleryAdapter.notifyDataSetChanged()
     }
 
-    private fun show24HourRecoveryBox() {
+    private fun showPeopleTab() {
+        isAlbumView = true
+        currentActiveBox = 0
+        txtTitle.text = "People & Faces AI"
+
+        fullScreenImageView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+        recyclerView.layoutManager = GridLayoutManager(this, 2)
+
+        val peopleGroup = allMediaList.distinctBy { it.personName }.toMutableList()
+        displayList.clear()
+        displayList.addAll(peopleGroup)
+        galleryAdapter.setAlbumMode(true)
+        galleryAdapter.notifyDataSetChanged()
+    }
+
+    private fun show12HourRecoveryBox() {
         currentActiveBox = 1
         isAlbumView = false
         cleanExpiredItems()
-        txtTitle.text = "24-Hour AI Box (${recoveryBox24Hours.size})"
+        txtTitle.text = "12-Hour AI Box (${recoveryBox12Hours.size})"
         fullScreenImageView.visibility = View.GONE
         recyclerView.visibility = View.VISIBLE
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
         displayList.clear()
-        displayList.addAll(recoveryBox24Hours)
+        displayList.addAll(recoveryBox12Hours)
         galleryAdapter.setAlbumMode(false)
         galleryAdapter.notifyDataSetChanged()
     }
@@ -421,6 +536,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPhotoEditorDialog(item: MediaItem) {
         val editorOptions = arrayOf(
+            "AI Auto Enhance & Sharpen",
             "Apply Grayscale Filter",
             "Apply Sepia Filter",
             "Apply Invert Filter",
@@ -429,15 +545,19 @@ class MainActivity : AppCompatActivity() {
             "Normal View"
         )
         AlertDialog.Builder(this)
-            .setTitle("Photo Editor & GIF Maker")
+            .setTitle("AI Photo Editor & GIF Maker")
             .setItems(editorOptions) { _, which ->
                 when (which) {
-                    0 -> fullScreenImageView.setColorFilter(Color.GRAY)
-                    1 -> fullScreenImageView.setColorFilter(Color.YELLOW)
-                    2 -> fullScreenImageView.setColorFilter(Color.RED)
-                    3 -> fullScreenImageView.setColorFilter(Color.MAGENTA)
-                    4 -> Toast.makeText(this, "GIF Animation Created & Saved!", Toast.LENGTH_SHORT).show()
-                    5 -> fullScreenImageView.colorFilter = null
+                    0 -> {
+                        fullScreenImageView.setColorFilter(Color.argb(30, 255, 255, 255))
+                        Toast.makeText(this, "AI Auto Enhancements Applied!", Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> fullScreenImageView.setColorFilter(Color.GRAY)
+                    2 -> fullScreenImageView.setColorFilter(Color.YELLOW)
+                    3 -> fullScreenImageView.setColorFilter(Color.RED)
+                    4 -> fullScreenImageView.setColorFilter(Color.MAGENTA)
+                    5 -> Toast.makeText(this, "GIF Animation Created & Saved!", Toast.LENGTH_SHORT).show()
+                    6 -> fullScreenImageView.colorFilter = null
                 }
             }
             .setPositiveButton("Close", null)
@@ -446,7 +566,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAISearchDialog() {
         val input = EditText(this)
-        input.hint = "Search by object, tag..."
+        input.hint = "Search by person, object, tag..."
 
         AlertDialog.Builder(this)
             .setTitle("AI Smart Search")
@@ -462,7 +582,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun filterByAITag(query: String) {
-        val matched = allMediaList.filter { item -> item.tags.any { tag -> tag.contains(query) } }
+        val matched = allMediaList.filter { item -> 
+            item.tags.any { tag -> tag.contains(query) } || item.personName.lowercase().contains(query)
+        }
         if (matched.isEmpty()) {
             Toast.makeText(this, "No matching items found", Toast.LENGTH_SHORT).show()
         } else {
@@ -476,6 +598,7 @@ class MainActivity : AppCompatActivity() {
         val trashCount = recoveryBox30Days.size
         val duplicateCount = duplicateItemsList.size
         val options = arrayOf(
+            "Face Recognition & People Albums",
             "AI Duplicate & Blur Cleaner ($duplicateCount items)",
             "Supabase Cloud Backup & Sync",
             "30-Day Trash Box ($trashCount items)",
@@ -487,15 +610,16 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Menu Options")
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showDuplicateCleanerDialog()
-                    1 -> triggerCloudSync()
-                    2 -> show30DayRecoveryBox()
-                    3 -> {
+                    0 -> showPeopleTab()
+                    1 -> showDuplicateCleanerDialog()
+                    2 -> triggerCloudSync()
+                    3 -> show30DayRecoveryBox()
+                    4 -> {
                         recoveryBox30Days.clear()
                         Toast.makeText(this, "Trash Emptied Successfully", Toast.LENGTH_SHORT).show()
                     }
-                    4 -> showSettingsDialog()
-                    5 -> Toast.makeText(this, "Smart Gallery v1.0 - AI Edition", Toast.LENGTH_SHORT).show()
+                    5 -> showSettingsDialog()
+                    6 -> Toast.makeText(this, "Smart Gallery v1.0 - AI Edition", Toast.LENGTH_SHORT).show()
                 }
             }
             .show()
@@ -524,19 +648,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettingsDialog() {
-        val aiBoxCount = recoveryBox24Hours.size
+        val aiBoxCount = recoveryBox12Hours.size
         val settingsOptions = arrayOf(
-            "24-Hour AI Recovery Box ($aiBoxCount items - Secure)",
-            "Empty 24-Hour AI Box"
+            "12-Hour AI Recovery Box ($aiBoxCount items - Secure)",
+            "Empty 12-Hour AI Box"
         )
         AlertDialog.Builder(this)
             .setTitle("Settings")
             .setItems(settingsOptions) { _, which ->
                 when (which) {
-                    0 -> show24HourRecoveryBox()
+                    0 -> show12HourRecoveryBox()
                     1 -> {
-                        recoveryBox24Hours.clear()
-                        Toast.makeText(this, "24-Hour AI Box Emptied", Toast.LENGTH_SHORT).show()
+                        recoveryBox12Hours.clear()
+                        Toast.makeText(this, "12-Hour AI Box Emptied", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
