@@ -43,4 +43,8 @@ dependencies {
     
     // Background Coroutines Engine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Google ML Kit for AI Scanner & Safety Box
+    implementation("com.google.mlkit:image-labeling:17.0.7")
+    implementation("com.google.mlkit:object-detection:17.0.1")
 }
