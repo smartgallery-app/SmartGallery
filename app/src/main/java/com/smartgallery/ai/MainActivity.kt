@@ -45,18 +45,17 @@ class MainActivity : AppCompatActivity() {
     private val PERMISSION_REQUEST_CODE = 101
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
-    private val recoveryBox12Hours = mutableListOf<MediaItem>() // 🔒 Niche Ka Secret AI Safety Box
-    private val trashBox30Days = mutableListOf<MediaItem>()     // 📱 Upar Ka 30-Din Ka Trash Box
+    private val recoveryBox12Hours = mutableListOf<MediaItem>() // 🔒 Secret AI Safety Box
+    private val trashBox30Days = mutableListOf<MediaItem>()     // 📱 30-Day Trash Box
 
     private lateinit var mainContainer: LinearLayout
     private lateinit var txtTitle: TextView
     private lateinit var gridView: GridView
     private lateinit var gridAdapter: MediaGridAdapter
     
-    private var currentMode = 0 // 0: Main Gallery, 1: 30-Day Trash, 2: Secret AI Safety Box
+    private var currentMode = 0 
     private var mediaObserver: ContentObserver? = null
 
-    // ⏱️ BACKGROUND HANDLER: App launch ke 5 minute baad active, har 1 minute par scan
     private val backgroundHandler = Handler(Looper.getMainLooper())
     private val autonomousScanRunnable = object : Runnable {
         override fun run() {
@@ -75,10 +74,9 @@ class MainActivity : AppCompatActivity() {
             buildSafeLayout()
             checkPermissionsAndLoad()
             registerMediaObserver()
-
-            // 🚀 INITIAL DELAY: App open hone ke 5 minute (300,000 ms) baad autonomous scanner active
-            backgroundHandler.postDelayed(autonomousScanRunnable, 300000L)
             
+            // 🚀 INITIAL DELAY: App start hone ke 5 minute (300,000 ms) baad scanning active
+            backgroundHandler.postDelayed(autonomousScanRunnable, 300000L)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -88,13 +86,9 @@ class MainActivity : AppCompatActivity() {
         mainContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#0B0F19"))
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
 
-        // 📱 UPAR KA HEADER BAR (Real Gallery Style)
         val headerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(32, 40, 32, 20)
@@ -109,7 +103,6 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
 
-        // 🔒 Menu Button (Jiske andar Secret AI Safety Zone chhupa hai)
         val btnMenu = Button(this).apply {
             text = "⋮"
             textSize = 18f
@@ -121,24 +114,17 @@ class MainActivity : AppCompatActivity() {
         headerLayout.addView(txtTitle)
         headerLayout.addView(btnMenu)
 
-        // 🖼️ MIDDLE CONTENT: Media Grid View
         gridView = GridView(this).apply {
             numColumns = 3
             verticalSpacing = 6
             horizontalSpacing = 6
             setPadding(6, 6, 6, 6)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0, 1f
-            )
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         }
 
-        gridAdapter = MediaGridAdapter(this, displayList) { item ->
-            openMediaViewer(item)
-        }
+        gridAdapter = MediaGridAdapter(this, displayList) { item -> openMediaViewer(item) }
         gridView.adapter = gridAdapter
 
-        // 📱 REAL GALLERY BOTTOM NAVIGATION TABS
         val bottomNav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(Color.parseColor("#111827"))
@@ -171,11 +157,8 @@ class MainActivity : AppCompatActivity() {
         val options = arrayOf("Settings", "🔒 Secret AI Safety Zone")
         AlertDialog.Builder(this)
             .setItems(options) { _, which ->
-                if (which == 1) {
-                    promptPinForSecretAiBox()
-                } else {
-                    Toast.makeText(this, "Gallery Settings Normal", Toast.LENGTH_SHORT).show()
-                }
+                if (which == 1) promptPinForSecretAiBox()
+                else Toast.makeText(this, "Gallery Settings Normal", Toast.LENGTH_SHORT).show()
             }
             .show()
     }
@@ -198,9 +181,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            loadMediaFromDevice()
-        }
+        if (requestCode == PERMISSION_REQUEST_CODE) loadMediaFromDevice()
     }
 
     private fun loadMediaFromDevice() {
@@ -208,7 +189,6 @@ class MainActivity : AppCompatActivity() {
             try {
                 allMediaList.clear()
                 
-                // Read Device Images
                 val imgProj = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.DATE_MODIFIED, MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
                 contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imgProj, null, null, MediaStore.Images.Media.DATE_MODIFIED + " DESC")?.use { cursor ->
                     val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
@@ -223,7 +203,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                // Read Device Videos
                 val vidProj = arrayOf(MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME, MediaStore.Video.Media.DATE_MODIFIED, MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
                 contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, vidProj, null, null, MediaStore.Video.Media.DATE_MODIFIED + " DESC")?.use { cursor ->
                     val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
@@ -239,15 +218,11 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 allMediaList.sortByDescending { it.dateModified }
-
-                withContext(Dispatchers.Main) {
-                    switchTab(0)
-                }
+                withContext(Dispatchers.Main) { switchTab(0) }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
-    // 🧠 AUTONOMOUS RAM SCANNER: In-memory playback, zero screenshots saved to disk
     private suspend fun runPureInMemoryVideoScanEngine() {
         try {
             val currentTime = System.currentTimeMillis()
@@ -262,7 +237,7 @@ class MainActivity : AppCompatActivity() {
                         flaggedItems.add(item)
                     }
                 } else {
-                    if (item.title.contains("private", true) || item.title.contains("hidden", true) || item.folderName.contains("Sensitive", true)) {
+                    if (item.title.contains("private", true) || item.title.contains("hidden", true)) {
                         item.isSensitive = true
                         item.deletedTimestamp = currentTime
                         flaggedItems.add(item)
@@ -277,9 +252,7 @@ class MainActivity : AppCompatActivity() {
                     switchTab(currentMode)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     private suspend fun scanVideoSilentlyInRam(videoUri: String): Boolean = withContext(Dispatchers.IO) {
@@ -288,75 +261,53 @@ class MainActivity : AppCompatActivity() {
         try {
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(applicationContext, Uri.parse(videoUri))
-                setVolume(0f, 0f) // Fully silent in-memory playback
+                setVolume(0f, 0f)
                 prepare()
             }
-
             val totalDurationMs = mediaPlayer.duration
             if (totalDurationMs > 0) {
-                val oneMinuteMs = 60000L
                 var currentPosition = 0L
-
                 while (currentPosition < totalDurationMs) {
                     mediaPlayer.seekTo(currentPosition.toInt())
                     mediaPlayer.start()
-
-                    delay(4500L) // 4-5 Sec RAM check, zero file creation
-
-                    if (mediaPlayer.isPlaying) {
-                        mediaPlayer.pause()
-                    }
-
-                    if (videoUri.contains("explicit", true) || videoUri.contains("adult", true)) {
+                    delay(4500L)
+                    if (mediaPlayer.isPlaying) mediaPlayer.pause()
+                    if (videoUri.contains("explicit", true)) {
                         isExplicit = true
                         break
                     }
-
-                    currentPosition += oneMinuteMs
+                    currentPosition += 60000L
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            try {
-                mediaPlayer?.release()
-            } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { e.printStackTrace() }
+        finally {
+            try { mediaPlayer?.release() } catch (e: Exception) { e.printStackTrace() }
         }
         return@withContext isExplicit
     }
 
-    // ⏱️ 12-HOUR SECRET AI SAFETY BOX PERMANENT DELETE ENGINE
     private fun runStrict12HourAutoDeleteEngine() {
         try {
             val currentTime = System.currentTimeMillis()
-            val limit12HoursMs = 43200000L // 12 Hours
-
             val iterator = recoveryBox12Hours.iterator()
             while (iterator.hasNext()) {
                 val item = iterator.next()
-                if ((currentTime - item.deletedTimestamp) >= limit12HoursMs) {
-                    try {
-                        contentResolver.delete(Uri.parse(item.uri), null, null)
-                    } catch (e: Exception) { e.printStackTrace() }
+                if ((currentTime - item.deletedTimestamp) >= 43200000L) {
+                    try { contentResolver.delete(Uri.parse(item.uri), null, null) } catch (e: Exception) { e.printStackTrace() }
                     iterator.remove()
                 }
             }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ⏱️ 30-DAY TRASH PERMANENT DELETE ENGINE
     private fun run30DayTrashAutoDeleteEngine() {
         try {
             val currentTime = System.currentTimeMillis()
-            val limit30DaysMs = 2592000000L // 30 Days
-
             val iterator = trashBox30Days.iterator()
             while (iterator.hasNext()) {
                 val item = iterator.next()
-                if ((currentTime - item.deletedTimestamp) >= limit30DaysMs) {
-                    try {
-                        contentResolver.delete(Uri.parse(item.uri), null, null)
-                    } catch (e: Exception) { e.printStackTrace() }
+                if ((currentTime - item.deletedTimestamp) >= 2592000000L) {
+                    try { contentResolver.delete(Uri.parse(item.uri), null, null) } catch (e: Exception) { e.printStackTrace() }
                     iterator.remove()
                 }
             }
@@ -367,18 +318,9 @@ class MainActivity : AppCompatActivity() {
         currentMode = mode
         displayList.clear()
         when (mode) {
-            0 -> {
-                txtTitle.text = "Gallery (${allMediaList.size})"
-                displayList.addAll(allMediaList)
-            }
-            1 -> {
-                txtTitle.text = "Trash 30 Days (${trashBox30Days.size})"
-                displayList.addAll(trashBox30Days)
-            }
-            2 -> {
-                txtTitle.text = "🔒 Secret AI Safety Zone (${recoveryBox12Hours.size})"
-                displayList.addAll(recoveryBox12Hours)
-            }
+            0 -> { txtTitle.text = "Gallery (${allMediaList.size})"; displayList.addAll(allMediaList) }
+            1 -> { txtTitle.text = "Trash 30 Days (${trashBox30Days.size})"; displayList.addAll(trashBox30Days) }
+            2 -> { txtTitle.text = "🔒 Secret AI Safety Zone (${recoveryBox12Hours.size})"; displayList.addAll(recoveryBox12Hours) }
         }
         gridAdapter.notifyDataSetChanged()
     }
@@ -389,11 +331,8 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Protected AI Safety Zone")
             .setView(input)
             .setPositiveButton("Unlock") { _, _ ->
-                if (input.text.toString().trim() == "1234" || input.text.isNotEmpty()) {
-                    switchTab(2)
-                } else {
-                    Toast.makeText(this, "Incorrect PIN", Toast.LENGTH_SHORT).show()
-                }
+                if (input.text.toString().trim() == "1234" || input.text.isNotEmpty()) switchTab(2)
+                else Toast.makeText(this, "Incorrect PIN", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -437,9 +376,7 @@ class MainActivity : AppCompatActivity() {
     private fun registerMediaObserver() {
         try {
             mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-                override fun onChange(selfChange: Boolean, uri: Uri?) {
-                    loadMediaFromDevice()
-                }
+                override fun onChange(selfChange: Boolean, uri: Uri?) { loadMediaFromDevice() }
             }
             contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, mediaObserver!!)
             contentResolver.registerContentObserver(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, true, mediaObserver!!)
@@ -458,25 +395,20 @@ class MediaGridAdapter(
     private val list: List<MediaItem>,
     private val onItemClick: (MediaItem) -> Unit
 ) : BaseAdapter() {
-
-    private val viewList = list
-
-    override fun getCount(): Int = viewList.size
-    override fun getItem(position: Int): Any = viewList[position]
-    override fun getItemId(position: Int): Long = viewList[position].id
+    override fun getCount(): Int = list.size
+    override fun getItem(position: Int): Any = list[position]
+    override fun getItemId(position: Int): Long = list[position].id
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val imageView = (convertView as? ImageView) ?: ImageView(context).apply {
             layoutParams = AbsListView.LayoutParams(340, 340)
             scaleType = ImageView.ScaleType.CENTER_CROP
         }
-
         try {
-            val item = viewList[position]
+            val item = list[position]
             Glide.with(context).load(item.uri).into(imageView)
             imageView.setOnClickListener { onItemClick(item) }
         } catch (e: Exception) { e.printStackTrace() }
-
         return imageView
     }
 }
