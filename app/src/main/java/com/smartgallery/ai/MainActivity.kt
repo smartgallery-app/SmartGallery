@@ -1,5 +1,6 @@
 package com.smartgallery.app
 
+import android.Manifest
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -150,8 +151,8 @@ class MainActivity : AppCompatActivity() {
     private val allMediaList = mutableListOf<MediaItem>()
     private val displayList = mutableListOf<MediaItem>()
     
-    private val recoveryBox12Hours = mutableListOf<MediaItem>() // Hidden AI Safety Box
-    private val recoveryBox30Days = mutableListOf<MediaItem>()  // User Trash Box
+    private val recoveryBox12Hours = mutableListOf<MediaItem>()
+    private val recoveryBox30Days = mutableListOf<MediaItem>()
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var fullScreenImageView: PhotoView
@@ -180,12 +181,11 @@ class MainActivity : AppCompatActivity() {
     private var mediaObserver: ContentObserver? = null
     private var currentOpenedItem: MediaItem? = null
 
-    // AUTOMATIC BACKGROUND HANDLER (Har 10 minute mein khud-ba-khud scan chalega)
     private val backgroundHandler = Handler(Looper.getMainLooper())
     private val backgroundScanRunnable = object : Runnable {
         override fun run() {
             runAutoAISafetyScanQuietly()
-            backgroundHandler.postDelayed(this, 600000L) // 10 Minutes interval
+            backgroundHandler.postDelayed(this, 600000L)
         }
     }
 
@@ -268,7 +268,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        backgroundHandler.post(backgroundScanRunnable) // App khulte hi background loop active
+        backgroundHandler.post(backgroundScanRunnable)
     }
 
     override fun onPause() {
@@ -279,7 +279,7 @@ class MainActivity : AppCompatActivity() {
     private fun showAdvancedSettingsMenu() {
         val options = arrayOf(
             "🛡️ Secret 12-Hour AI Safety Box (${recoveryBox12Hours.size} items)",
-            "⚡ AI Auto-Scanner Status: Active (10 min interval)",
+            "⚡ AI Auto-Scanner Status: Active",
             "🔒 App Security & PIN Lock",
             "🧹 Clean Temp Storage Cache",
             "ℹ️ Smart Gallery AI v2.5"
@@ -289,10 +289,10 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> openHidden12HourSafetyBox()
-                    1 -> Toast.makeText(this, "Background AI is protecting your device automatically", Toast.LENGTH_SHORT).show()
+                    1 -> Toast.makeText(this, "Background AI is active", Toast.LENGTH_SHORT).show()
                     2 -> Toast.makeText(this, "Security lock enabled", Toast.LENGTH_SHORT).show()
                     3 -> Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
-                    4 -> Toast.makeText(this, "Smart Gallery AI - Universal Privacy Shield", Toast.LENGTH_LONG).show()
+                    4 -> Toast.makeText(this, "Smart Gallery AI", Toast.LENGTH_LONG).show()
                 }
             }
             .setPositiveButton("Close", null)
@@ -320,9 +320,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent.createChooser(intent, "Share Media"))
             }
         }
-        btnFavViewer.setOnClickListener {
-            currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite }
-        }
+        btnFavViewer.setOnClickListener { currentOpenedItem?.let { item -> item.isFavorite = !item.isFavorite } }
         btnEditViewer.setOnClickListener { Toast.makeText(this, "Editor", Toast.LENGTH_SHORT).show() }
         btnDeleteViewer.setOnClickListener {
             currentOpenedItem?.let { item ->
@@ -470,7 +468,7 @@ class MainActivity : AppCompatActivity() {
                 val bmp = retriever.getFrameAtTime(time * 1000, MediaMetadataRetriever.OPTION_CLOSEST)
                 if (bmp != null) {
                     bmp.recycle()
-                    return false // AI Placeholder check
+                    return false
                 }
                 time += 30000L
             }
@@ -494,7 +492,7 @@ class MainActivity : AppCompatActivity() {
 
         if (flagged.isNotEmpty()) {
             recoveryBox12Hours.addAll(flagged)
-            allMediaList.removeAll(flagged) // Instant removal from main gallery
+            allMediaList.removeAll(flagged)
         }
 
         recoveryBox12Hours.removeAll { item ->
