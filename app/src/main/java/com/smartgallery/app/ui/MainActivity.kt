@@ -113,15 +113,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPhotosView() {
-        // Safe layout check
+        recyclerView.adapter = GalleryAdapter(allMediaList)
     }
 
     private fun loadAlbumsView() {
-        // Safe layout check
+        // Distinct Albums View
+        val distinctAlbums = allMediaList.distinctBy { it.bucketName }
+        recyclerView.adapter = GalleryAdapter(distinctAlbums)
     }
 
     private fun loadBinView() {
-        // Safe layout check
+        // 30-Day Trash Empty Placeholder View
+        recyclerView.adapter = GalleryAdapter(emptyList())
     }
 
     override fun onRequestPermissionsResult(
