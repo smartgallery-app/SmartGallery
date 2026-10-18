@@ -7,12 +7,13 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.smartgallery.app.MediaItem
 import com.smartgallery.app.R
 
 class GalleryAdapter(
     private val context: Context,
-    private val mediaList: List<MainActivity.MediaItem>,
-    private val onClick: (MainActivity.MediaItem) -> Unit
+    private val mediaList: List<MediaItem>,
+    private val onClick: (MediaItem) -> Unit
 ) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
