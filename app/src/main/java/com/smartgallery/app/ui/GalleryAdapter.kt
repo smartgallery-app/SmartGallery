@@ -29,13 +29,11 @@ class GalleryAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val mediaItem = mediaList[position]
 
-        // Glide image and video thumbnail loader
         Glide.with(context)
             .load(mediaItem.uriString)
             .centerCrop()
             .into(holder.imageView)
 
-        // Show play badge for video files
         if (mediaItem.isVideo) {
             holder.videoIcon.visibility = View.VISIBLE
         } else {
