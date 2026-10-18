@@ -8,7 +8,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.smartgallery.app.R
 
 class SecretAiScannerService : Service() {
 
@@ -18,7 +17,6 @@ class SecretAiScannerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Background AI sentinel continuous scanning logic
         return START_STICKY
     }
 
@@ -41,7 +39,7 @@ class SecretAiScannerService : Service() {
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Smart Gallery Secure")
             .setContentText("AI Sentinel is active in background")
-            .setSmallIcon(android.R.drawable.ic_menu_shield)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
             .build()
     }
 }
