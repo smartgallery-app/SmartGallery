@@ -13,7 +13,11 @@ class SecretAiScannerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(1, createNotification())
+        try {
+            startForeground(1, createNotification())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
