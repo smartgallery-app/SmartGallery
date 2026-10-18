@@ -38,7 +38,8 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, FullScreenActivity::class.java).apply {
                 putExtra("MEDIA_URI", item.uri)
-                putExtra("MEDIA_DATE", item.dateAdded.toString())
+                putExtra("MEDIA_ID", item.id)
+                putExtra("MEDIA_DATE", item.dateAdded)
                 putExtra("MEDIA_FOLDER", item.bucketName)
             }
             holder.itemView.context.startActivity(intent)
