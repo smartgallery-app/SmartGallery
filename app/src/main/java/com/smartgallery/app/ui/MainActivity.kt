@@ -20,17 +20,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.smartgallery.app.MediaItem
 import com.smartgallery.app.R
+import com.smartgallery.app.ai.SecretAiScannerService
+import com.smartgallery.app.trash.TrashActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-data class AlbumItem(
-    val folderName: String,
-    val coverUri: String,
-    val itemCount: Int
-)
+data class AlbumItem(val folderName: String, val coverUri: String, val itemCount: Int)
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,7 +39,6 @@ class MainActivity : AppCompatActivity() {
 
     private val mediaList = ArrayList<MediaItem>()
     private val albumList = ArrayList<AlbumItem>()
-    
     private var currentGridSpanCount = 3
     private var isAlbumView = false
 
@@ -61,7 +58,22 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        setupGridPinchZoomGesture()
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScaleEnd(detector: ScaleGestureDetector) {
+                if (detector.scaleFactor < 0.85f && currentGridSpanCount < 5) {
+                    currentGridSpanCount++
+                    updateGridSpan()
+                } else if (detector.scaleFactor > 1.15f && currentGridSpanCount > 2) {
+                    currentGridSpanCount--
+                    updateGridSpan()
+                }
+            }
+        })
+
+        recyclerView.setOnTouchListener { _, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            false
+        }
 
         bottomNav = findViewById(R.id.bottomNavigationView)
         bottomNav.setOnItemSelectedListener { item ->
@@ -83,30 +95,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkPermissionsAndLoad()
-    }
-
-    private fun setupGridPinchZoomGesture() {
-        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScaleEnd(detector: ScaleGestureDetector) {
-                val scaleFactor = detector.scaleFactor
-                if (scaleFactor < 0.85f) {
-                    if (currentGridSpanCount < 5) {
-                        currentGridSpanCount++
-                        updateGridSpan()
-                    }
-                } else if (scaleFactor > 1.15f) {
-                    if (currentGridSpanCount > 2) {
-                        currentGridSpanCount--
-                        updateGridSpan()
-                    }
-                }
-            }
-        })
-
-        recyclerView.setOnTouchListener { _, event ->
-            scaleGestureDetector.onTouchEvent(event)
-            false
-        }
     }
 
     private fun updateGridSpan() {
@@ -135,21 +123,12 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             val uniquePaths = HashSet<String>()
             val tempList = ArrayList<MediaItem>()
-
-            val projection = arrayOf(
-                MediaStore.MediaColumns._ID,
-                MediaStore.MediaColumns.DATA,
-                MediaStore.MediaColumns.DATE_ADDED
-            )
+            val projection = arrayOf(MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DATA, MediaStore.MediaColumns.DATE_ADDED)
             val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
 
-            contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null, sortOrder
-            )?.use { cursor ->
+            contentResolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                 val dataCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
-
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
                     val path = cursor.getString(dataCol)
@@ -160,13 +139,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            contentResolver.query(
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null, sortOrder
-            )?.use { cursor ->
+            contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, projection, null, null, sortOrder)?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                 val dataCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
-
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
                     val path = cursor.getString(dataCol)
@@ -189,22 +164,15 @@ class MainActivity : AppCompatActivity() {
     private fun loadAlbums() {
         CoroutineScope(Dispatchers.IO).launch {
             val albumMap = HashMap<String, ArrayList<String>>()
-
             for (item in mediaList) {
                 val folderName = File(item.path).parentFile?.name ?: "Others"
-                if (!albumMap.containsKey(folderName)) {
-                    albumMap[folderName] = ArrayList()
-                }
+                if (!albumMap.containsKey(folderName)) albumMap[folderName] = ArrayList()
                 albumMap[folderName]?.add(item.uriString)
             }
-
             val tempAlbums = ArrayList<AlbumItem>()
             for ((name, uris) in albumMap) {
-                if (uris.isNotEmpty()) {
-                    tempAlbums.add(AlbumItem(name, uris[0], uris.size))
-                }
+                if (uris.isNotEmpty()) tempAlbums.add(AlbumItem(name, uris[0], uris.size))
             }
-
             withContext(Dispatchers.Main) {
                 albumList.clear()
                 albumList.addAll(tempAlbums)
@@ -215,7 +183,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleAiBackgroundEngine() {
         Handler(Looper.getMainLooper()).postDelayed({
-            val serviceIntent = Intent(this, com.smartgallery.app.ai.SecretAiScannerService::class.java)
+            val serviceIntent = Intent(this, SecretAiScannerService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
@@ -231,14 +199,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_trash -> {
-                startActivity(Intent(this, com.smartgallery.app.trash.TrashActivity::class.java))
-                true
-            }
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
+            R.id.action_trash -> { startActivity(Intent(this, TrashActivity::class.java)); true }
+            R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
             else -> super.onOptionsItemSelected(item)
         }
     }
