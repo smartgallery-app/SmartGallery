@@ -54,11 +54,6 @@ class MainActivity : AppCompatActivity() {
                         loadAlbumsView()
                         true
                     }
-                    R.id.nav_bin -> {
-                        recyclerView.layoutManager = GridLayoutManager(this, 3)
-                        loadBinView()
-                        true
-                    }
                     else -> false
                 }
             }
@@ -128,20 +123,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAlbumsView() {
-        val distinctAlbums = allMediaList.distinctBy { it.bucketName }
-        recyclerView.adapter = GalleryAdapter(distinctAlbums, isAlbumView = true)
-    }
+        val albumsList = ArrayList<MediaItem>()
+        val trashCoverUri = if (TrashStorage.binList.isNotEmpty()) TrashStorage.binList.first().uri else ""
+        
+        // Recently deleted / Bin Album card at top
+        albumsList.add(MediaItem(-1L, trashCoverUri, 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
 
-    private fun loadBinView() {
-        recyclerView.adapter = GalleryAdapter(TrashStorage.binList, isAlbumView = false)
+        val distinctAlbums = allMediaList.distinctBy { it.bucketName }
+        albumsList.addAll(distinctAlbums)
+
+        recyclerView.adapter = GalleryAdapter(albumsList, isAlbumView = true)
     }
 
     override fun onResume() {
         super.onResume()
-        if (bottomNav.selectedItemId == R.id.nav_photos) {
+        if (bottomNav.selectedItemId == R.id.nav_albums) {
+            loadAlbumsView()
+        } else {
             loadPhotosView()
-        } else if (bottomNav.selectedItemId == R.id.nav_bin) {
-            loadBinView()
         }
     }
 
