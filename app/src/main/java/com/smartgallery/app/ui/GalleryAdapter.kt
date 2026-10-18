@@ -6,14 +6,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.smartgallery.app.R
 
-class GalleryAdapter(private val mediaList: List<MediaItem>) :
+class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbumView: Boolean) :
     RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
+        val albumNameText: TextView = view.findViewById(R.id.albumNameText)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -24,14 +26,20 @@ class GalleryAdapter(private val mediaList: List<MediaItem>) :
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mediaList[position]
-        
-        // Image set karne ke liye direct URI bind
         holder.imageView.setImageURI(Uri.parse(item.uri))
 
-        // Single Click Par Full Screen View
+        if (isAlbumView) {
+            holder.albumNameText.visibility = View.VISIBLE
+            holder.albumNameText.text = item.bucketName
+        } else {
+            holder.albumNameText.visibility = View.GONE
+        }
+
         holder.itemView.setOnClickListener {
             val intent = Intent(holder.itemView.context, FullScreenActivity::class.java).apply {
                 putExtra("MEDIA_URI", item.uri)
+                putExtra("MEDIA_DATE", item.dateAdded.toString())
+                putExtra("MEDIA_FOLDER", item.bucketName)
             }
             holder.itemView.context.startActivity(intent)
         }
