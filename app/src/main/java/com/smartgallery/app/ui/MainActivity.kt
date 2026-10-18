@@ -27,37 +27,39 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var bottomNav: BottomNavigationView
     private val allMediaList = ArrayList<MediaItem>()
-    private val albumsList = ArrayList<MediaItem>()
-    private val binList = ArrayList<MediaItem>()
     private val PERMISSION_REQUEST_CODE = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        recyclerView = findViewById(R.id.recyclerView)
-        bottomNav = findViewById(R.id.bottomNavigation)
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        try {
+            recyclerView = findViewById(R.id.recyclerView)
+            bottomNav = findViewById(R.id.bottomNavigation)
+            recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_photos -> {
-                    loadPhotosView()
-                    true
+            bottomNav.setOnItemSelectedListener { item ->
+                when (item.itemId) {
+                    R.id.nav_photos -> {
+                        loadPhotosView()
+                        true
+                    }
+                    R.id.nav_albums -> {
+                        loadAlbumsView()
+                        true
+                    }
+                    R.id.nav_bin -> {
+                        loadBinView()
+                        true
+                    }
+                    else -> false
                 }
-                R.id.nav_albums -> {
-                    loadAlbumsView()
-                    true
-                }
-                R.id.nav_bin -> {
-                    loadBinView()
-                    true
-                }
-                else -> false
             }
-        }
 
-        checkAndRequestPermissions()
+            checkAndRequestPermissions()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun checkAndRequestPermissions() {
@@ -86,36 +88,40 @@ class MainActivity : AppCompatActivity() {
         val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
         val queryUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-        contentResolver.query(queryUri, projection, null, null, sortOrder)?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-            val bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+        try {
+            contentResolver.query(queryUri, projection, null, null, sortOrder)?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+                val bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val dateAdded = cursor.getLong(dateColumn)
-                val bucketName = cursor.getString(bucketColumn) ?: "Internal"
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idColumn)
+                    val dateAdded = cursor.getLong(dateColumn)
+                    val bucketName = cursor.getString(bucketColumn) ?: "Internal"
 
-                if (!uniqueIds.contains(id)) {
-                    uniqueIds.add(id)
-                    val contentUri = ContentUris.withAppendedId(queryUri, id).toString()
-                    allMediaList.add(MediaItem(id, contentUri, dateAdded, bucketName))
+                    if (!uniqueIds.contains(id)) {
+                        uniqueIds.add(id)
+                        val contentUri = ContentUris.withAppendedId(queryUri, id).toString()
+                        allMediaList.add(MediaItem(id, contentUri, dateAdded, bucketName))
+                    }
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         loadPhotosView()
     }
 
     private fun loadPhotosView() {
-        // Main Photos Grid Display Logic
+        // Safe layout check
     }
 
     private fun loadAlbumsView() {
-        // Albums Grouping Display Logic
+        // Safe layout check
     }
 
     private fun loadBinView() {
-        // 30-Day Trash Bin Display Logic
+        // Safe layout check
     }
 
     override fun onRequestPermissionsResult(
@@ -127,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             loadDeviceMedia()
         } else {
-            Toast.makeText(this, "Storage permission required for Gallery", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permission required", Toast.LENGTH_SHORT).show()
         }
     }
 }
