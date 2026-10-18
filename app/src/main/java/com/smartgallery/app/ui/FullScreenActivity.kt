@@ -3,6 +3,7 @@ package com.smartgallery.app.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -28,14 +29,16 @@ class FullScreenActivity : AppCompatActivity() {
         val btnInfo = findViewById<MaterialButton>(R.id.btnInfo)
 
         val mediaUriStr = intent.getStringExtra("MEDIA_URI")
-        val mediaId = intent.getLongExtra("MEDIA_ID", 0)
-        val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Gallery"
-        val mediaDate = intent.getLongExtra("MEDIA_DATE", 0) * 1000L
+        val mediaId = intent.getLongExtra("MEDIA_ID", 0L)
+        val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
+        val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
-        var mediaUri: Uri? = null
-        if (mediaUriStr != null && mediaUriStr.isNotEmpty()) {
-            mediaUri = Uri.parse(mediaUriStr)
-            imageView.setImageURI(mediaUri)
+        if (!mediaUriStr.isNull_or_empty()) {
+            try {
+                imageView.setImageURI(Uri.parse(mediaUriStr))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
 
         val formattedDate = if (mediaDate > 0) {
@@ -46,43 +49,45 @@ class FullScreenActivity : AppCompatActivity() {
 
         infoText.text = "Folder: $mediaFolder\nDate: $formattedDate"
 
-        // 1. Share Button
+        // Share Button
         btnShare.setOnClickListener {
-            if (mediaUri != null) {
+            if (!mediaUriStr.isNull_or_empty()) {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/*"
-                    putExtra(Intent.EXTRA_STREAM, mediaUri)
+                    putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaUriStr))
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 startActivity(Intent.createChooser(shareIntent, "Share via"))
             }
         }
 
-        // 2. Favorite Toggle
+        // Favorite Toggle
         btnFavorite.setOnClickListener {
             Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
         }
 
-        // 3. Edit / Filter Button
+        // Edit
         btnEdit.setOnClickListener {
-            Toast.makeText(this, "Opening Editor", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Photo Editor feature coming soon", Toast.LENGTH_SHORT).show()
         }
 
-        // 4. Delete / Bin Button
+        // Delete (Moves to 30-Day Bin)
         btnDelete.setOnClickListener {
-            if (mediaUriStr != null && mediaUriStr.isNotEmpty()) {
+            if (!mediaUriStr.isNull_or_empty()) {
                 val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
                 TrashStorage.binList.add(itemToDelete)
-                Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "30 Din ke Recycle Bin me bhej diya gaya hai", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
 
-        // 5. Info Button Toggle
-        var showInfo = true
+        // Info Toggle
         btnInfo.setOnClickListener {
-            showInfo = !showInfo
-            infoText.visibility = if (showInfo) android.view.View.VISIBLE else android.view.View.GONE
+            infoText.visibility = if (infoText.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
+    }
+
+    private fun String?.isNull_or_empty(): Boolean {
+        return this == null || this.isEmpty()
     }
 }
