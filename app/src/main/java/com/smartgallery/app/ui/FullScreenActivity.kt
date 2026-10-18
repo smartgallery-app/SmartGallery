@@ -28,12 +28,12 @@ class FullScreenActivity : AppCompatActivity() {
         val btnDelete = findViewById<MaterialButton>(R.id.btnDelete)
         val btnInfo = findViewById<MaterialButton>(R.id.btnInfo)
 
-        val mediaUriStr = intent.getStringExtra("MEDIA_URI")
+        val mediaUriStr = intent.getStringExtra("MEDIA_URI") ?: ""
         val mediaId = intent.getLongExtra("MEDIA_ID", 0L)
         val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
         val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
-        if (!mediaUriStr.isNull_or_empty()) {
+        if (mediaUriStr.isNotEmpty()) {
             try {
                 imageView.setImageURI(Uri.parse(mediaUriStr))
             } catch (e: Exception) {
@@ -51,7 +51,7 @@ class FullScreenActivity : AppCompatActivity() {
 
         // Share Button
         btnShare.setOnClickListener {
-            if (!mediaUriStr.isNull_or_empty()) {
+            if (mediaUriStr.isNotEmpty()) {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/*"
                     putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaUriStr))
@@ -73,10 +73,10 @@ class FullScreenActivity : AppCompatActivity() {
 
         // Delete (Moves to 30-Day Bin)
         btnDelete.setOnClickListener {
-            if (!mediaUriStr.isNull_or_empty()) {
+            if (mediaUriStr.isNotEmpty()) {
                 val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
                 TrashStorage.binList.add(itemToDelete)
-                Toast.makeText(this, "30 Din ke Recycle Bin me bhej diya gaya hai", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Recently deleted bin me bhej diya gaya hai", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
@@ -85,9 +85,5 @@ class FullScreenActivity : AppCompatActivity() {
         btnInfo.setOnClickListener {
             infoText.visibility = if (infoText.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
-    }
-
-    private fun String?.isNull_or_empty(): Boolean {
-        return this == null || this.isEmpty()
     }
 }
