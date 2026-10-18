@@ -116,17 +116,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPhotosView() {
-        recyclerView.adapter = GalleryAdapter(allMediaList)
+        recyclerView.adapter = GalleryAdapter(allMediaList, isAlbumView = false)
     }
 
     private fun loadAlbumsView() {
-        // Distinct Folders (Camera, WhatsApp, Screenshots, etc.)
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
-        recyclerView.adapter = GalleryAdapter(distinctAlbums)
+        recyclerView.adapter = GalleryAdapter(distinctAlbums, isAlbumView = true)
     }
 
     private fun loadBinView() {
-        recyclerView.adapter = GalleryAdapter(emptyList())
+        recyclerView.adapter = GalleryAdapter(emptyList(), isAlbumView = false)
     }
 
     override fun onRequestPermissionsResult(
