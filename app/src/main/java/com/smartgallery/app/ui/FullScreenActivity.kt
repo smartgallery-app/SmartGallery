@@ -29,7 +29,7 @@ class FullScreenActivity : AppCompatActivity() {
 
         val mediaUriStr = intent.getStringExtra("MEDIA_URI")
         val mediaId = intent.getLongExtra("MEDIA_ID", 0)
-        val mediaFolder = intent.getStringExtra("MEDIA_FOLDER" ) ?: "Gallery"
+        val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Gallery"
         val mediaDate = intent.getLongExtra("MEDIA_DATE", 0) * 1000L
 
         var mediaUri: Uri? = null
@@ -60,7 +60,7 @@ class FullScreenActivity : AppCompatActivity() {
 
         // 2. Favorite Toggle
         btnFavorite.setOnClickListener {
-            Toast.h(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
         }
 
         // 3. Edit / Filter Button
