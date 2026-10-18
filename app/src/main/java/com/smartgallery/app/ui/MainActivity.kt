@@ -18,29 +18,21 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.smartgallery.app.MediaItem
 import com.smartgallery.app.R
-import com.smartgallery.app.ai.SecretAiScannerService
-import com.smartgallery.app.trash.TrashActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+data class AlbumItem(
+    val folderName: String,
+    val coverUri: String,
+    val itemCount: Int
+)
+
 class MainActivity : AppCompatActivity() {
-
-    data class MediaItem(
-        val id: Long,
-        val uriString: String,
-        val isVideo: Boolean,
-        val path: String
-    )
-
-    data class AlbumItem(
-        val folderName: String,
-        val coverUri: String,
-        val itemCount: Int
-    )
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: GalleryAdapter
@@ -215,6 +207,7 @@ class MainActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 albumList.clear()
+                albumList.addAll(tempAlbums)
                 supportActionBar?.title = "Albums (${albumList.size})"
             }
         }
@@ -222,7 +215,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleAiBackgroundEngine() {
         Handler(Looper.getMainLooper()).postDelayed({
-            val serviceIntent = Intent(this, SecretAiScannerService::class.java)
+            val serviceIntent = Intent(this, com.smartgallery.app.ai.SecretAiScannerService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
@@ -239,7 +232,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_trash -> {
-                startActivity(Intent(this, TrashActivity::class.java))
+                startActivity(Intent(this, com.smartgallery.app.trash.TrashActivity::class.java))
                 true
             }
             R.id.action_settings -> {
