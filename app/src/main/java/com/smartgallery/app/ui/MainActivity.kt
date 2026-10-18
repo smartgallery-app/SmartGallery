@@ -41,14 +41,17 @@ class MainActivity : AppCompatActivity() {
             bottomNav.setOnItemSelectedListener { item ->
                 when (item.itemId) {
                     R.id.nav_photos -> {
+                        recyclerView.layoutManager = GridLayoutManager(this, 3)
                         loadPhotosView()
                         true
                     }
                     R.id.nav_albums -> {
+                        recyclerView.layoutManager = GridLayoutManager(this, 2)
                         loadAlbumsView()
                         true
                     }
                     R.id.nav_bin -> {
+                        recyclerView.layoutManager = GridLayoutManager(this, 3)
                         loadBinView()
                         true
                     }
@@ -97,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
                     val dateAdded = cursor.getLong(dateColumn)
-                    val bucketName = cursor.getString(bucketColumn) ?: "Internal"
+                    val bucketName = cursor.getString(bucketColumn) ?: "Camera"
 
                     if (!uniqueIds.contains(id)) {
                         uniqueIds.add(id)
@@ -117,13 +120,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAlbumsView() {
-        // Distinct Albums View
+        // Distinct Folders (Camera, WhatsApp, Screenshots, etc.)
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
         recyclerView.adapter = GalleryAdapter(distinctAlbums)
     }
 
     private fun loadBinView() {
-        // 30-Day Trash Empty Placeholder View
         recyclerView.adapter = GalleryAdapter(emptyList())
     }
 
