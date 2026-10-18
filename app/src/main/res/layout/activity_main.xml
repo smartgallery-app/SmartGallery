@@ -1,199 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:background="#000000">
 
-    <!-- Top Bar -->
-    <LinearLayout
-        android:id="@+id/topBar"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
-
-        <TextView
-            android:id="@+id/txtTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Photos"
-            android:textColor="@android:color/white"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/btnSearch"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:padding="6dp"
-            android:src="@android:drawable/ic_menu_search"
-            android:contentDescription="Search" />
-
-        <ImageView
-            android:id="@+id/btnMenu"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="12dp"
-            android:padding="6dp"
-            android:src="@android:drawable/ic_menu_manage"
-            android:contentDescription="Menu" />
-    </LinearLayout>
-
-    <!-- Main Content RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/topBar"
-        android:layout_above="@id/bottomActionLayout" />
+        android:layout_above="@id/bottomNavigationView" />
 
-    <!-- Full Screen Photo View -->
-    <com.github.chrisbanes.photoview.PhotoView
-        android:id="@+id/fullScreenImageView"
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@id/topBar"
-        android:layout_above="@id/bottomActionLayout"
-        android:visibility="gone"
-        android:background="@android:color/black" />
-
-    <!-- Bottom Navigation Tabs (Photos / Albums) -->
-    <LinearLayout
-        android:id="@+id/bottomActionLayout"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:background="#111111"
-        android:paddingHorizontal="8dp">
-
-        <LinearLayout
-            android:id="@+id/normalTabsLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/tabPhotos"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Photos"
-                android:textColor="@android:color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tabAlbums"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Albums"
-                android:textColor="#888888"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Multi-Select Action Bar -->
-        <LinearLayout
-            android:id="@+id/batchActionLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:visibility="gone">
-
-            <Button
-                android:id="@+id/btnBatchDelete"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
-                android:text="Delete Selected"
-                android:backgroundTint="#AA0000"
-                android:textColor="@android:color/white" />
-
-            <Button
-                android:id="@+id/btnBatchCancel"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
-                android:text="Cancel"
-                android:backgroundTint="#444444"
-                android:textColor="@android:color/white" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Bottom Viewer Toolbar (Full Screen Media Controls) -->
-    <LinearLayout
-        android:id="@+id/bottomViewerToolbar"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_alignParentBottom="true"
-        android:background="#DD000000"
-        android:orientation="horizontal"
-        android:visibility="gone">
-
-        <ImageView
-            android:id="@+id/btnShare"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_share"
-            android:contentDescription="Share" />
-
-        <ImageView
-            android:id="@+id/btnFavViewer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/btn_star_big_off"
-            android:contentDescription="Favorite" />
-
-        <ImageView
-            android:id="@+id/btnEditViewer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:contentDescription="Edit" />
-
-        <ImageView
-            android:id="@+id/btnDeleteViewer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:contentDescription="Delete" />
-
-        <ImageView
-            android:id="@+id/btnInfoViewer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_info_details"
-            android:contentDescription="Info" />
-
-        <ImageView
-            android:id="@+id/btnMoreMenuViewer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:contentDescription="More" />
-    </LinearLayout>
+        android:background="#1E1E1E"
+        app:itemIconTint="@android:color/white"
+        app:itemTextColor="@android:color/white"
+        app:menu="@menu/bottom_nav_menu" />
 
 </RelativeLayout>
