@@ -1,4 +1,4 @@
-package com.smartgallery.app.ui
+package com.smartgallery.app
 
 import android.Manifest
 import android.content.ContentUris
@@ -9,10 +9,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.view.GestureDetector
 import android.view.Menu
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -20,13 +18,23 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.smartgallery.app.MediaItem
-import com.smartgallery.app.R
+import com.smartgallery.app.ui.FullScreenActivity
+import com.smartgallery.app.ui.GalleryAdapter
+import com.smartgallery.app.ui.SettingsActivity
+import com.smartgallery.app.ai.SecretAiScannerService
+import com.smartgallery.app.trash.TrashActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+data class MediaItem(
+    val id: Long,
+    val uriString: String,
+    val isVideo: Boolean,
+    val path: String
+)
 
 data class AlbumItem(
     val folderName: String,
@@ -44,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     private val mediaList = ArrayList<MediaItem>()
     private val albumList = ArrayList<AlbumItem>()
     
-    private var currentGridSpanCount = 3 // Default 3 columns (Supports 2, 3, 4, 5)
+    private var currentGridSpanCount = 3
     private var isAlbumView = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,10 +71,8 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        // Setup Pinch-to-Zoom Gesture for Dynamic Grid Columns (2, 3, 4, 5 Lines)
         setupGridPinchZoomGesture()
 
-        // Bottom Navigation Setup
         bottomNav = findViewById(R.id.bottomNavigationView)
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -94,13 +100,11 @@ class MainActivity : AppCompatActivity() {
             override fun onScaleEnd(detector: ScaleGestureDetector) {
                 val scaleFactor = detector.scaleFactor
                 if (scaleFactor < 0.85f) {
-                    // Zoom out: Increase columns up to 5 lines
                     if (currentGridSpanCount < 5) {
                         currentGridSpanCount++
                         updateGridSpan()
                     }
                 } else if (scaleFactor > 1.15f) {
-                    // Zoom in: Decrease columns down to 2 lines
                     if (currentGridSpanCount > 2) {
                         currentGridSpanCount--
                         updateGridSpan()
@@ -149,7 +153,6 @@ class MainActivity : AppCompatActivity() {
             )
             val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
 
-            // 1. Load Unique Images
             contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, sortOrder
@@ -167,7 +170,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // 2. Load Unique Videos
             contentResolver.query(
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                 projection, null, null, sortOrder
@@ -215,16 +217,14 @@ class MainActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 albumList.clear()
-                albumList.addAll(tempAlbums)
                 supportActionBar?.title = "Albums (${albumList.size})"
             }
         }
     }
 
-    // 5-10 Minutes Delayed Activation for 24/7 AI Sentinel Engine
     private fun scheduleAiBackgroundEngine() {
         Handler(Looper.getMainLooper()).postDelayed({
-            val serviceIntent = Intent(this, com.smartgallery.app.ai.SecretAiScannerService::class.java)
+            val serviceIntent = Intent(this, SecretAiScannerService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_trash -> {
-                startActivity(Intent(this, com.smartgallery.app.trash.TrashActivity::class.java))
+                startActivity(Intent(this, TrashActivity::class.java))
                 true
             }
             R.id.action_settings -> {
