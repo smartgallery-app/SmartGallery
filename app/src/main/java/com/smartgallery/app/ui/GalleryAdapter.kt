@@ -1,37 +1,42 @@
 package com.smartgallery.app.ui
 
-import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.smartgallery.app.MediaItem
 import com.smartgallery.app.R
 
-class GalleryAdapter(
-    private val context: Context,
-    private val mediaList: List<MediaItem>,
-    private val onClick: (MediaItem) -> Unit
-) : RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
+class GalleryAdapter(private val mediaList: List<MediaItem>) :
+    RecyclerView.Adapter<GalleryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val imageView: ImageView = view.findViewById(R.id.imageView)
-        val videoIcon: ImageView = view.findViewById(R.id.videoIcon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.item_media, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_media, parent, false)
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val mediaItem = mediaList[position]
-        Glide.with(context).load(mediaItem.uriString).centerCrop().into(holder.imageView)
-        holder.videoIcon.visibility = if (mediaItem.isVideo) View.VISIBLE else View.GONE
-        holder.itemView.setOnClickListener { onClick(mediaItem) }
+        val item = mediaList[position]
+        
+        // Image set karne ke liye direct URI bind
+        holder.imageView.setImageURI(Uri.parse(item.uri))
+
+        // Single Click Par Full Screen View
+        holder.itemView.setOnClickListener {
+            val intent = Intent(holder.itemView.context, FullScreenActivity::class.java).apply {
+                putExtra("MEDIA_URI", item.uri)
+            }
+            holder.itemView.context.startActivity(intent)
+        }
     }
 
     override fun getItemCount(): Int = mediaList.size
-}
+    }
+    
