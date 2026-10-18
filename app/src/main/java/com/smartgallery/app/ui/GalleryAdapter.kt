@@ -28,21 +28,9 @@ class GalleryAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val mediaItem = mediaList[position]
-
-        Glide.with(context)
-            .load(mediaItem.uriString)
-            .centerCrop()
-            .into(holder.imageView)
-
-        if (mediaItem.isVideo) {
-            holder.videoIcon.visibility = View.VISIBLE
-        } else {
-            holder.videoIcon.visibility = View.GONE
-        }
-
-        holder.itemView.setOnClickListener {
-            onClick(mediaItem)
-        }
+        Glide.with(context).load(mediaItem.uriString).centerCrop().into(holder.imageView)
+        holder.videoIcon.visibility = if (mediaItem.isVideo) View.VISIBLE else View.GONE
+        holder.itemView.setOnClickListener { onClick(mediaItem) }
     }
 
     override fun getItemCount(): Int = mediaList.size
