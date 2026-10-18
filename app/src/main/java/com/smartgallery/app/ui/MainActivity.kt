@@ -22,6 +22,10 @@ data class MediaItem(
     val bucketName: String
 )
 
+object TrashStorage {
+    val binList = ArrayList<MediaItem>()
+}
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
@@ -100,7 +104,11 @@ class MainActivity : AppCompatActivity() {
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
                     val dateAdded = cursor.getLong(dateColumn)
-                    val bucketName = cursor.getString(bucketColumn) ?: "Camera"
+                    var bucketName = cursor.getString(bucketColumn) ?: "Camera"
+
+                    if (bucketName.all { it.isDigit() }) {
+                        bucketName = "Camera"
+                    }
 
                     if (!uniqueIds.contains(id)) {
                         uniqueIds.add(id)
@@ -125,7 +133,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadBinView() {
-        recyclerView.adapter = GalleryAdapter(emptyList(), isAlbumView = false)
+        recyclerView.adapter = GalleryAdapter(TrashStorage.binList, isAlbumView = false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (bottomNav.selectedItemId == R.id.nav_photos) {
+            loadPhotosView()
+        } else if (bottomNav.selectedItemId == R.id.nav_bin) {
+            loadBinView()
+        }
     }
 
     override fun onRequestPermissionsResult(
