@@ -26,7 +26,9 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mediaList[position]
-        holder.imageView.setImageURI(Uri.parse(item.uri))
+        if (item.uri.isNotEmpty()) {
+            holder.imageView.setImageURI(Uri.parse(item.uri))
+        }
 
         if (isAlbumView) {
             holder.albumNameText.visibility = View.VISIBLE
