@@ -2,22 +2,12 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="120dp"
-    android:padding="1dp">
+    android:layout_margin="2dp">
 
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:background="#222222" />
-
-    <ImageView
-        android:id="@+id/videoIcon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="6dp"
-        android:src="@android:drawable/ic_media_play"
-        android:visibility="gone" />
+        android:scaleType="centerCrop" />
 
 </FrameLayout>
