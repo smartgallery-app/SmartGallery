@@ -11,6 +11,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var bottomNav: BottomNavigationView
+    private lateinit var toolbar: Toolbar
     private val allMediaList = ArrayList<MediaItem>()
     private val PERMISSION_REQUEST_CODE = 101
 
@@ -41,6 +43,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         try {
+            toolbar = findViewById(R.id.toolbar)
+            setSupportActionBar(toolbar)
+
             recyclerView = findViewById(R.id.recyclerView)
             bottomNav = findViewById(R.id.bottomNavigation)
             recyclerView.layoutManager = GridLayoutManager(this, 3)
@@ -48,11 +53,13 @@ class MainActivity : AppCompatActivity() {
             bottomNav.setOnItemSelectedListener { item ->
                 when (item.itemId) {
                     R.id.nav_photos -> {
+                        supportActionBar?.title = "Photos"
                         recyclerView.layoutManager = GridLayoutManager(this, 3)
                         loadPhotosView()
                         true
                     }
                     R.id.nav_albums -> {
+                        supportActionBar?.title = "Albums"
                         recyclerView.layoutManager = GridLayoutManager(this, 2)
                         loadAlbumsView()
                         true
@@ -68,18 +75,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menu?.add(0, 101, 0, "Sort by")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
-        menu?.add(0, 102, 1, "Settings")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+        // Real gallery 3-dot menu items
+        menu?.add(0, 101, 0, "Search")?.setIcon(android.R.drawable.ic_menu_search)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        menu?.add(0, 102, 1, "Sort by")
+        menu?.add(0, 103, 2, "Settings")
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             101 -> {
-                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Search clicked", Toast.LENGTH_SHORT).show()
                 true
             }
             102 -> {
+                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
+                true
+            }
+            103 -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
@@ -147,24 +160,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadAlbumsView() {
         val albumsList = ArrayList<MediaItem>()
-
-        // Featured & Categories Sections (List Style)
-        albumsList.add(MediaItem(-100L, "", 0L, "👥 People"))
-        albumsList.add(MediaItem(-101L, "", 0L, "✨ Smart Categories"))
-        albumsList.add(MediaItem(-102L, "", 0L, "🎞️ Memories"))
-
-        // Media Types (List Style)
-        albumsList.add(MediaItem(-200L, "", 0L, "⭕ Motion Photo"))
-        albumsList.add(MediaItem(-201L, "", 0L, "ƒ Portrait"))
-        albumsList.add(MediaItem(-202L, "", 0L, "📷 RAW"))
-        albumsList.add(MediaItem(-203L, "", 0L, "🥞 Bursts"))
-
-        // More Section (List Style)
-        albumsList.add(MediaItem(-300L, "", 0L, "🔒 Private Vault"))
-        albumsList.add(MediaItem(-301L, "", 0L, "🧹 Cleanup suggestions"))
-        albumsList.add(MediaItem(-999L, "", 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
-
-        // Regular Device Folders (Grid Cards)
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
         albumsList.addAll(distinctAlbums)
 
