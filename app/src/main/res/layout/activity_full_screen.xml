@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Full Image View -->
     <ImageView
         android:id="@+id/fullImageView"
         android:layout_width="match_parent"
@@ -13,7 +12,6 @@
         android:contentDescription="Full Screen Image"
         android:scaleType="fitCenter" />
 
-    <!-- Details/Info Overlay -->
     <TextView
         android:id="@+id/infoTextView"
         android:layout_width="match_parent"
@@ -25,7 +23,6 @@
         android:textSize="14sp"
         android:visibility="gone" />
 
-    <!-- 5-Button Bottom Action Bar (Real Gallery Style) -->
     <LinearLayout
         android:id="@+id/bottomActionBar"
         android:layout_width="match_parent"
