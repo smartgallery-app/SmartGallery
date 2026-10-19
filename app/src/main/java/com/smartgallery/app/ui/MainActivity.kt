@@ -2,10 +2,13 @@ package com.smartgallery.app.ui
 
 import android.Manifest
 import android.content.ContentUris
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -61,6 +64,25 @@ class MainActivity : AppCompatActivity() {
             checkAndRequestPermissions()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            R.id.action_sort -> {
+                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
@@ -124,12 +146,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadAlbumsView() {
         val albumsList = ArrayList<MediaItem>()
-        
-        // Real Gallery Style: Recently deleted album at top[span_1](start_span)[span_1](end_span)
-        val trashCover = if (TrashStorage.binList.isNotEmpty()) TrashStorage.binList.first().uri else ""
-        albumsList.add(MediaItem(-999L, trashCover, 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
 
-        // Clean Device Folders
+        // Featured & Categories Section
+        albumsList.add(MediaItem(-100L, "", 0L, "👥 People"))
+        albumsList.add(MediaItem(-101L, "", 0L, "✨ Smart Categories"))
+        albumsList.add(MediaItem(-102L, "", 0L, "🎞️ Memories"))
+
+        // Media Types
+        albumsList.add(MediaItem(-200L, "", 0L, "⭕ Motion Photo"))
+        albumsList.add(MediaItem(-201L, "", 0L, "ƒ Portrait"))
+        albumsList.add(MediaItem(-202L, "", 0L, "📷 RAW"))
+        albumsList.add(MediaItem(-203L, "", 0L, "🥞 Bursts"))
+
+        // More Section
+        albumsList.add(MediaItem(-300L, "", 0L, "🔒 Private Vault"))
+        albumsList.add(MediaItem(-301L, "", 0L, "🧹 Cleanup suggestions"))
+        albumsList.add(MediaItem(-999L, "", 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
+
+        // Regular Device Albums
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
         albumsList.addAll(distinctAlbums)
 
