@@ -34,7 +34,7 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
                 .load(Uri.parse(item.uri))
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .override(300, 300)
+                .override(400, 400)
                 .into(holder.imageView)
         } else {
             holder.imageView.setImageDrawable(null)
@@ -60,4 +60,5 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
     }
 
     override fun getItemCount(): Int = mediaList.size
-}
+    }
+    
