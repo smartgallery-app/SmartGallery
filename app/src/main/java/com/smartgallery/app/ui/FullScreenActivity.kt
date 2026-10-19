@@ -4,12 +4,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.button.MaterialButton
 import com.smartgallery.app.R
 import java.text.SimpleDateFormat
@@ -22,7 +22,7 @@ class FullScreenActivity : AppCompatActivity() {
         setContentView(R.layout.activity_full_screen)
 
         try {
-            val imageView = findViewById<ImageView>(R.id.fullImageView)
+            val photoView = findViewById<PhotoView>(R.id.fullImageView)
             val infoText = findViewById<TextView>(R.id.infoTextView)
 
             val btnShare = findViewById<MaterialButton>(R.id.btnShare)
@@ -37,10 +37,11 @@ class FullScreenActivity : AppCompatActivity() {
             val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
             if (mediaUriStr.isNotEmpty()) {
+                // Glide with PhotoView supports smooth pinch-to-zoom
                 Glide.with(this)
                     .load(Uri.parse(mediaUriStr))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(imageView)
+                    .into(photoView)
             }
 
             val formattedDate = if (mediaDate > 0) {
