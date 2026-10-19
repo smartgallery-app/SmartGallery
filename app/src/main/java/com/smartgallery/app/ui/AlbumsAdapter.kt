@@ -1,8 +1,5 @@
 package com.smartgallery.app.ui
 
-content_copy
-package com.smartgallery.app.ui
-
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,9 +12,9 @@ class AlbumsAdapter(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        const TYPE_HEADER = 0
-        const TYPE_MEDIA_TYPES_CONTAINER = 1
-        const TYPE_MORE_CONTAINER = 2
+        const val TYPE_HEADER = 0
+        const val TYPE_MEDIA_TYPES_CONTAINER = 1
+        const val TYPE_MORE_CONTAINER = 2
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -71,7 +68,7 @@ class AlbumsAdapter(
         }
     }
 
-    override fun getItemCount(): Int = 4 // Header, Media Types, Header, More
+    override fun getItemCount(): Int = 4
 
     class HeaderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.sectionTitleText)
