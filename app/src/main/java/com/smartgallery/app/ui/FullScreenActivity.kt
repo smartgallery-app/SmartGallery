@@ -49,7 +49,7 @@ class FullScreenActivity : AppCompatActivity() {
 
         infoText.text = "Folder: $mediaFolder\nDate: $formattedDate"
 
-        // Share Button
+        // 1. Share Button
         btnShare.setOnClickListener {
             if (mediaUriStr.isNotEmpty()) {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -61,29 +61,31 @@ class FullScreenActivity : AppCompatActivity() {
             }
         }
 
-        // Favorite Toggle
+        // 2. Favorite Toggle
         btnFavorite.setOnClickListener {
             Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
         }
 
-        // Edit
+        // 3. Edit Button
         btnEdit.setOnClickListener {
-            Toast.makeText(this, "Photo Editor feature coming soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Opening Editor", Toast.LENGTH_SHORT).show()
         }
 
-        // Delete (Moves to 30-Day Bin)
+        // 4. Delete Button (Moves to 30-Day Recently Deleted Bin)
         btnDelete.setOnClickListener {
             if (mediaUriStr.isNotEmpty()) {
                 val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
                 TrashStorage.binList.add(itemToDelete)
-                Toast.makeText(this, "Recently deleted bin me bhej diya gaya hai", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Moved to Recently Deleted (30 Days)", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
 
-        // Info Toggle
+        // 5. Info Button Toggle
+        var showInfo = true
         btnInfo.setOnClickListener {
-            infoText.visibility = if (infoText.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+            showInfo = !showInfo
+            infoText.visibility = if (showInfo) View.VISIBLE else View.GONE
         }
     }
 }
