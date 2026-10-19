@@ -1,32 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/app-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <ImageView
+    <!-- Pinch-to-Zoom Enabled Photo View -->
+    <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/fullImageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:contentDescription="Full Screen Image"
         android:scaleType="fitCenter" />
 
+    <!-- Info Overlay Text -->
     <TextView
         android:id="@+id/infoTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/bottomActionBar"
-        android:background="#80000000"
-        android:padding="12dp"
+        android:background="#B3000000"
+        android:padding="16dp"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:visibility="gone" />
 
+    <!-- Real Gallery Style Bottom Action Bar -->
     <LinearLayout
         android:id="@+id/bottomActionBar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="65dp"
         android:layout_alignParentBottom="true"
         android:background="#1A1A1A"
         android:gravity="center"
