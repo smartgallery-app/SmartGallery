@@ -82,18 +82,22 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
                 holder.albumNameText.visibility = View.GONE
             }
 
+            // Safe Photo Click - Crash Free Intent
             holder.itemView.setOnClickListener {
-                val context = holder.itemView.context
-                val intent = Intent(context, FullScreenActivity::class.java).apply {
-                    putExtra("MEDIA_URI", item.uri)
-                    putExtra("MEDIA_ID", item.id)
-                    putExtra("MEDIA_DATE", item.dateAdded)
-                    putExtra("MEDIA_FOLDER", item.bucketName)
+                if (item.uri.isNotEmpty()) {
+                    val context = holder.itemView.context
+                    val intent = Intent(context, FullScreenActivity::class.java).apply {
+                        putExtra("MEDIA_URI", item.uri)
+                        putExtra("MEDIA_ID", item.id)
+                        putExtra("MEDIA_DATE", item.dateAdded)
+                        putExtra("MEDIA_FOLDER", item.bucketName)
+                    }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
             }
         }
     }
 
     override fun getItemCount(): Int = mediaList.size
-}
+    }
+    
