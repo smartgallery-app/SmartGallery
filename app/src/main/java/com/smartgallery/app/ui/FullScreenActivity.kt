@@ -21,76 +21,74 @@ class FullScreenActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_screen)
 
-        val imageView = findViewById<ImageView>(R.id.fullImageView)
-        val infoText = findViewById<TextView>(R.id.infoTextView)
-        
-        val btnShare = findViewById<MaterialButton>(R.id.btnShare)
-        val btnFavorite = findViewById<MaterialButton>(R.id.btnFavorite)
-        val btnEdit = findViewById<MaterialButton>(R.id.btnEdit)
-        val btnDelete = findViewById<MaterialButton>(R.id.btnDelete)
-        val btnInfo = findViewById<MaterialButton>(R.id.btnInfo)
+        try {
+            val imageView = findViewById<ImageView>(R.id.fullImageView)
+            val infoText = findViewById<TextView>(R.id.infoTextView)
 
-        val mediaUriStr = intent.getStringExtra("MEDIA_URI") ?: ""
-        val mediaId = intent.getLongExtra("MEDIA_ID", 0L)
-        val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
-        val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
+            val btnShare = findViewById<MaterialButton>(R.id.btnShare)
+            val btnFavorite = findViewById<MaterialButton>(R.id.btnFavorite)
+            val btnEdit = findViewById<MaterialButton>(R.id.btnEdit)
+            val btnDelete = findViewById<MaterialButton>(R.id.btnDelete)
+            val btnInfo = findViewById<MaterialButton>(R.id.btnInfo)
 
-        if (mediaUriStr.isNotEmpty()) {
-            try {
+            val mediaUriStr = intent.getStringExtra("MEDIA_URI") ?: ""
+            val mediaId = intent.getLongExtra("MEDIA_ID", 0L)
+            val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
+            val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
+
+            if (mediaUriStr.isNotEmpty()) {
                 Glide.with(this)
                     .load(Uri.parse(mediaUriStr))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(imageView)
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
-        }
 
-        val formattedDate = if (mediaDate > 0) {
-            SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(mediaDate))
-        } else {
-            "Unknown Date"
-        }
+            val formattedDate = if (mediaDate > 0) {
+                SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(mediaDate))
+            } else {
+                "Unknown Date"
+            }
 
-        infoText.text = "Folder: $mediaFolder\nDate: $formattedDate"
+            infoText?.text = "Folder: $mediaFolder\nDate: $formattedDate"
 
-        // 1. Share Button
-        btnShare.setOnClickListener {
-            if (mediaUriStr.isNotEmpty()) {
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "image/*"
-                    putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaUriStr))
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            btnShare?.setOnClickListener {
+                if (mediaUriStr.isNotEmpty()) {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/*"
+                        putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaUriStr))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(shareIntent, "Share via"))
                 }
-                startActivity(Intent.createChooser(shareIntent, "Share via"))
             }
-        }
 
-        // 2. Favorite Toggle
-        btnFavorite.setOnClickListener {
-            Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
-        }
-
-        // 3. Edit Button
-        btnEdit.setOnClickListener {
-            Toast.makeText(this, "Opening Editor", Toast.LENGTH_SHORT).show()
-        }
-
-        // 4. Delete Button (Moves to Recently Deleted Bin)
-        btnDelete.setOnClickListener {
-            if (mediaUriStr.isNotEmpty()) {
-                val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
-                TrashStorage.binList.add(itemToDelete)
-                Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
-                finish()
+            btnFavorite?.setOnClickListener {
+                Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
             }
-        }
 
-        // 5. Info Toggle Button
-        var showInfo = true
-        btnInfo.setOnClickListener {
-            showInfo = !showInfo
-            infoText.visibility = if (showInfo) View.VISIBLE else View.GONE
+            btnEdit?.setOnClickListener {
+                Toast.makeText(this, "Opening Editor", Toast.LENGTH_SHORT).show()
+            }
+
+            btnDelete?.setOnClickListener {
+                if (mediaUriStr.isNotEmpty()) {
+                    val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
+                    TrashStorage.binList.add(itemToDelete)
+                    Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
+
+            var showInfo = false
+            btnInfo?.setOnClickListener {
+                showInfo = !showInfo
+                infoText?.visibility = if (showInfo) View.VISIBLE else View.GONE
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Unable to load media", Toast.LENGTH_SHORT).show()
+            finish()
         }
     }
 }
