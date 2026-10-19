@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.smartgallery.app.R
 import java.text.SimpleDateFormat
@@ -35,7 +36,10 @@ class FullScreenActivity : AppCompatActivity() {
 
         if (mediaUriStr.isNotEmpty()) {
             try {
-                imageView.setImageURI(Uri.parse(mediaUriStr))
+                Glide.with(this)
+                    .load(Uri.parse(mediaUriStr))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(imageView)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -71,17 +75,17 @@ class FullScreenActivity : AppCompatActivity() {
             Toast.makeText(this, "Opening Editor", Toast.LENGTH_SHORT).show()
         }
 
-        // 4. Delete Button (Moves to 30-Day Recently Deleted Bin)
+        // 4. Delete Button (Moves to Recently Deleted Bin)
         btnDelete.setOnClickListener {
             if (mediaUriStr.isNotEmpty()) {
                 val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
                 TrashStorage.binList.add(itemToDelete)
-                Toast.makeText(this, "Moved to Recently Deleted (30 Days)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
 
-        // 5. Info Button Toggle
+        // 5. Info Toggle Button
         var showInfo = true
         btnInfo.setOnClickListener {
             showInfo = !showInfo
