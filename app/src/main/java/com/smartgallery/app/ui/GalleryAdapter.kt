@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.smartgallery.app.R
 
 class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbumView: Boolean) :
@@ -26,8 +28,17 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mediaList[position]
+
+        // Smooth Image Loading & Caching with Glide
         if (item.uri.isNotEmpty()) {
-            holder.imageView.setImageURI(Uri.parse(item.uri))
+            Glide.with(holder.imageView.context)
+                .load(Uri.parse(item.uri))
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .override(300, 300) // Grid thumbnail size limit for speed
+                .into(holder.imageView)
+        } else {
+            holder.imageView.setImageDrawable(null)
         }
 
         if (isAlbumView) {
@@ -49,5 +60,4 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
     }
 
     override fun getItemCount(): Int = mediaList.size
-    }
-    
+}
