@@ -67,19 +67,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Dynamic 3-Dot Menu (XML error proof)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
+        menu?.add(0, 101, 0, "Sort by")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+        menu?.add(0, 102, 1, "Settings")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
+            101 -> {
+                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
                 true
             }
-            R.id.action_sort -> {
-                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
+            102 -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
             else -> super.onOptionsItemSelected(item)
