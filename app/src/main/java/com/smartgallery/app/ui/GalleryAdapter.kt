@@ -29,13 +29,12 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = mediaList[position]
 
-        // Smooth Image Loading & Caching with Glide
         if (item.uri.isNotEmpty()) {
             Glide.with(holder.imageView.context)
                 .load(Uri.parse(item.uri))
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .override(300, 300) // Grid thumbnail size limit for speed
+                .override(300, 300)
                 .into(holder.imageView)
         } else {
             holder.imageView.setImageDrawable(null)
@@ -49,13 +48,14 @@ class GalleryAdapter(private val mediaList: List<MediaItem>, private val isAlbum
         }
 
         holder.itemView.setOnClickListener {
-            val intent = Intent(holder.itemView.context, FullScreenActivity::class.java).apply {
+            val context = holder.itemView.context
+            val intent = Intent(context, FullScreenActivity::class.java).apply {
                 putExtra("MEDIA_URI", item.uri)
                 putExtra("MEDIA_ID", item.id)
                 putExtra("MEDIA_DATE", item.dateAdded)
                 putExtra("MEDIA_FOLDER", item.bucketName)
             }
-            holder.itemView.context.startActivity(intent)
+            context.startActivity(intent)
         }
     }
 
