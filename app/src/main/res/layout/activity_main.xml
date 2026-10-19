@@ -6,7 +6,7 @@
     android:background="#000000"
     android:orientation="vertical">
 
-    <!-- Top Toolbar with Title, Search and 3-Dot Menu -->
+    <!-- Top Toolbar -->
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -15,7 +15,7 @@
         app:title="Photos"
         app:titleTextColor="#FFFFFF" />
 
-    <!-- Main Content RecyclerView -->
+    <!-- RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
@@ -24,7 +24,7 @@
         android:clipToPadding="false"
         android:padding="8dp" />
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar (Fixed Reference) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
@@ -32,6 +32,6 @@
         android:background="#1A1A1A"
         app:itemIconTint="#FFFFFF"
         app:itemTextColor="#FFFFFF"
-        app:menu="@anim/bottom_nav_menu" /> <!-- Ya aapka existing menu resource -->
+        app:menu="@menu/bottom_nav_menu" />
 
 </LinearLayout>
