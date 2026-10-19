@@ -67,7 +67,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Dynamic 3-Dot Menu (XML error proof)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menu?.add(0, 101, 0, "Sort by")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         menu?.add(0, 102, 1, "Settings")?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
@@ -149,23 +148,11 @@ class MainActivity : AppCompatActivity() {
     private fun loadAlbumsView() {
         val albumsList = ArrayList<MediaItem>()
 
-        // Featured & Categories Section
-        albumsList.add(MediaItem(-100L, "", 0L, "👥 People"))
-        albumsList.add(MediaItem(-101L, "", 0L, "✨ Smart Categories"))
-        albumsList.add(MediaItem(-102L, "", 0L, "🎞️ Memories"))
+        // 1. Recently Deleted Bin (Upar top album)
+        val trashCover = if (TrashStorage.binList.isNotEmpty()) TrashStorage.binList.first().uri else ""
+        albumsList.add(MediaItem(-999L, trashCover, 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
 
-        // Media Types
-        albumsList.add(MediaItem(-200L, "", 0L, "⭕ Motion Photo"))
-        albumsList.add(MediaItem(-201L, "", 0L, "ƒ Portrait"))
-        albumsList.add(MediaItem(-202L, "", 0L, "📷 RAW"))
-        albumsList.add(MediaItem(-203L, "", 0L, "🥞 Bursts"))
-
-        // More Section
-        albumsList.add(MediaItem(-300L, "", 0L, "🔒 Private Vault"))
-        albumsList.add(MediaItem(-301L, "", 0L, "🧹 Cleanup suggestions"))
-        albumsList.add(MediaItem(-999L, "", 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
-
-        // Regular Device Albums
+        // 2. Sirf Real Device Albums (Camera, WhatsApp, Screenshots, Pictures, Downloads, etc.)
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
         albumsList.addAll(distinctAlbums)
 
