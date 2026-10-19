@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/app-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Pinch-to-Zoom Enabled Photo View -->
-    <com.github.chrisbanes.photoview.PhotoView
-        android:id="@+id/fullImageView"
+    <!-- ViewPager2 for Left/Right Photo Swiping -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="Full Screen Image"
-        android:scaleType="fitCenter" />
+        android:layout_above="@id/bottomActionBar" />
 
     <!-- Info Overlay Text -->
     <TextView
@@ -25,7 +23,7 @@
         android:textSize="14sp"
         android:visibility="gone" />
 
-    <!-- Real Gallery Style Bottom Action Bar -->
+    <!-- Bottom Action Bar -->
     <LinearLayout
         android:id="@+id/bottomActionBar"
         android:layout_width="match_parent"
