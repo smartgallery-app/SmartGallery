@@ -14,21 +14,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.smartgallery.app.R
-
-data class MediaItem(
-    val id: Long,
-    val uri: String,
-    val dateAdded: Long,
-    val bucketName: String
-)
-
-object TrashStorage {
-    val binList = ArrayList<MediaItem>()
-}
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,7 +38,6 @@ class MainActivity : AppCompatActivity() {
 
             recyclerView = findViewById(R.id.recyclerView)
             bottomNav = findViewById(R.id.bottomNavigation)
-            recyclerView.layoutManager = GridLayoutManager(this, 3)
 
             bottomNav.setOnItemSelectedListener { item ->
                 when (item.itemId) {
@@ -60,7 +49,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     R.id.nav_albums -> {
                         supportActionBar?.title = "Albums"
-                        recyclerView.layoutManager = GridLayoutManager(this, 2)
+                        recyclerView.layoutManager = LinearLayoutManager(this)
                         loadAlbumsView()
                         true
                     }
@@ -75,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        // Real gallery 3-dot menu items
         menu?.add(0, 101, 0, "Search")?.setIcon(android.R.drawable.ic_menu_search)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         menu?.add(0, 102, 1, "Sort by")
         menu?.add(0, 103, 2, "Settings")
@@ -84,14 +72,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            101 -> {
-                Toast.makeText(this, "Search clicked", Toast.LENGTH_SHORT).show()
-                true
-            }
-            102 -> {
-                Toast.makeText(this, "Sorting: Newest at top", Toast.LENGTH_SHORT).show()
-                true
-            }
             103 -> {
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
@@ -116,36 +96,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadDeviceMedia() {
         allMediaList.clear()
-        val uniqueIds = HashSet<Long>()
-
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DATE_ADDED,
             MediaStore.Images.Media.BUCKET_DISPLAY_NAME
         )
-        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
         val queryUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
         try {
-            contentResolver.query(queryUri, projection, null, null, sortOrder)?.use { cursor ->
-                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-                val bucketColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+            contentResolver.query(queryUri, projection, null, null, "${MediaStore.Images.Media.DATE_ADDED} DESC")?.use { cursor ->
+                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
                 while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idColumn)
-                    val dateAdded = cursor.getLong(dateColumn)
-                    var bucketName = cursor.getString(bucketColumn) ?: "Camera"
-
-                    if (bucketName.all { it.isDigit() }) {
-                        bucketName = "Camera"
-                    }
-
-                    if (!uniqueIds.contains(id)) {
-                        uniqueIds.add(id)
-                        val contentUri = ContentUris.withAppendedId(queryUri, id).toString()
-                        allMediaList.add(MediaItem(id, contentUri, dateAdded, bucketName))
-                    }
+                    val id = cursor.getLong(idCol)
+                    val dateAdded = cursor.getLong(dateCol)
+                    val bucketName = cursor.getString(bucketCol) ?: "Camera"
+                    val contentUri = ContentUris.withAppendedId(queryUri, id).toString()
+                    allMediaList.add(MediaItem(id, contentUri, dateAdded, bucketName))
                 }
             }
         } catch (e: Exception) {
@@ -159,32 +128,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAlbumsView() {
-        val albumsList = ArrayList<MediaItem>()
-        val distinctAlbums = allMediaList.distinctBy { it.bucketName }
-        albumsList.addAll(distinctAlbums)
-
-        recyclerView.adapter = GalleryAdapter(albumsList, isAlbumView = true)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (bottomNav.selectedItemId == R.id.nav_albums) {
-            loadAlbumsView()
-        } else {
-            loadPhotosView()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            loadDeviceMedia()
-        } else {
-            Toast.makeText(this, "Permission required", Toast.LENGTH_SHORT).show()
+        // Multi-Section Structured Albums Adapter Set Kar Diya
+        recyclerView.adapter = AlbumsAdapter { sectionName ->
+            Toast.makeText(this, "Opening $sectionName", Toast.LENGTH_SHORT).show()
         }
     }
 }
