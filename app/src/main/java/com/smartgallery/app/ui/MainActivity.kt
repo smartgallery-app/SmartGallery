@@ -125,11 +125,11 @@ class MainActivity : AppCompatActivity() {
     private fun loadAlbumsView() {
         val albumsList = ArrayList<MediaItem>()
         
-        // 1. Real Gallery Style Recently Deleted / Bin Album
+        // Real Gallery Style: Recently deleted album at top[span_1](start_span)[span_1](end_span)
         val trashCover = if (TrashStorage.binList.isNotEmpty()) TrashStorage.binList.first().uri else ""
         albumsList.add(MediaItem(-999L, trashCover, 0L, "🗑️ Recently deleted (${TrashStorage.binList.size})"))
 
-        // 2. Clean Folders
+        // Clean Device Folders
         val distinctAlbums = allMediaList.distinctBy { it.bucketName }
         albumsList.addAll(distinctAlbums)
 
