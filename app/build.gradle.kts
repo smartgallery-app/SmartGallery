@@ -25,10 +25,12 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -49,4 +51,7 @@ dependencies {
     // Google ML Kit for AI Scanner & Safety Box
     implementation("com.google.mlkit:image-labeling:17.0.7")
     implementation("com.google.mlkit:object-detection:17.0.1")
+
+    // Photo Zoom Library (Pinch-to-Zoom support for FullScreen viewer)
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 }
