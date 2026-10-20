@@ -18,7 +18,9 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DATA,
-            MediaStore.MediaColumns.MIME_TYPE
+            MediaStore.MediaColumns.MIME_TYPE,
+            MediaStore.MediaColumns.DATE_ADDED,
+            MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
         )
 
         val uri = MediaStore.Files.getContentUri("external")
@@ -27,30 +29,40 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
         )
 
         cursor?.use { c ->
+            val idColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
             val pathColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
             val mimeColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
+            val dateColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
+            val bucketColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
 
             while (c.moveToNext()) {
-                val path = c.getString(pathColumn)
+                val id = c.getLong(idColumn)
+                val path = c.getString(pathColumn) ?: ""
                 val mimeType = c.getString(mimeColumn) ?: ""
-                val mediaItem = MediaItem(path, "Scanned File")
+                val dateAdded = c.getLong(dateColumn)
+                val bucketName = c.getString(bucketColumn) ?: "Gallery"
+
+                val mediaItem = MediaItem(
+                    id = id,
+                    path = path,
+                    name = "Scanned File",
+                    dateAdded = dateAdded,
+                    bucketName = bucketName
+                )
 
                 if (mimeType.startsWith("video/")) {
                     val videoUri = Uri.parse(path)
                     VideoScannerHelper.scanAndMoveToTrashIfSensitive(context, mediaItem, videoUri)
                 } else if (mimeType.startsWith("image/")) {
-                    val isSensitivePhoto = scanPhotoForSafety(path)
-                    if (isSensitivePhoto) {
-                        if (!TrashStorage.binList.contains(mediaItem)) {
-                            TrashStorage.binList.add(mediaItem)
+                    AIScannerHelper.scanImage(context, Uri.parse(path)) { isSensitive ->
+                        if (isSensitive) {
+                            if (!TrashStorage.binList.contains(mediaItem)) {
+                                TrashStorage.binList.add(mediaItem)
+                            }
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun scanPhotoForSafety(filePath: String): Boolean {
-        return false
     }
 }
