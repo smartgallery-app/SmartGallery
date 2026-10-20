@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     R.id.nav_albums -> {
                         supportActionBar?.title = "Albums"
-                        recyclerView.layoutManager = LinearLayoutManager(this)
+                        recyclerView.layoutManager = GridLayoutManager(this, 3)
                         loadAlbumsView()
                         true
                     }
@@ -156,7 +156,6 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.adapter = adapter
 
-        // Multi-Delete Action
         btnMultiDelete.setOnClickListener {
             val selectedPositions = adapter.selectedItems.toList().sortedDescending()
             for (pos in selectedPositions) {
@@ -173,7 +172,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
         }
 
-        // Multi-Share Action
         btnMultiShare.setOnClickListener {
             val uris = ArrayList<android.net.Uri>()
             for (pos in adapter.selectedItems) {
@@ -195,9 +193,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadAlbumsView() {
         selectionActionBar.visibility = View.GONE
-        val folders = listOf("Camera", "DCIM", "WhatsApp")
-        recyclerView.adapter = AlbumsAdapter(folders) { sectionName ->
-            Toast.makeText(this, "Opening $sectionName", Toast.LENGTH_SHORT).show()
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.adapter = AlbumsAdapter(allMediaList) { albumName ->
+            Toast.makeText(this, "Opening $albumName", Toast.LENGTH_SHORT).show()
         }
     }
 }
