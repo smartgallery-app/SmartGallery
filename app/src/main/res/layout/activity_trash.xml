@@ -2,41 +2,50 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#121212">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Trash / Recycle Bin"
-        android:textColor="#FFFFFF"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#1F1F1F"
+        android:paddingHorizontal="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="30-Day Recovery Trash Box"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnClearAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:backgroundTint="#FF5252"
+            android:text="Clear All"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+    </RelativeLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Items deleted here are permanently removed after 24 hours."
-        android:textColor="#888888"
-        android:textSize="14sp"
-        android:layout_marginBottom="20dp" />
+        android:background="#2C2C2C"
+        android:padding="12dp"
+        android:text="Deleted items in this album will be permanently removed after 30 days."
+        android:textColor="#B0BEC5"
+        android:textSize="12sp"
+        android:gravity="center" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewTrash"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <TextView
-        android:id="@+id/tvEmptyTrash"
-        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Trash is Empty"
-        android:textColor="#666666"
-        android:textSize="18sp"
-        android:gravity="center"
-        android:visibility="visible" />
+        android:padding="8dp" />
 
 </LinearLayout>
