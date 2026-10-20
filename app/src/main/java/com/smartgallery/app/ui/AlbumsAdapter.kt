@@ -8,12 +8,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.smartgallery.app.R
 
 class AlbumsAdapter(
+    private val foldersList: List<String>,
     private val onSectionClick: (String) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         const val TYPE_HEADER_FEATURED = 0
-        const val TYPE_MEDIA_TYPES_CONTAINER = 1
+        const val TYPE_FOLDERS_GRID = 1
         const val TYPE_HEADER_MORE = 2
         const val TYPE_MORE_CONTAINER = 3
     }
@@ -21,10 +22,10 @@ class AlbumsAdapter(
     override fun getItemViewType(position: Int): Int {
         return when (position) {
             0 -> TYPE_HEADER_FEATURED
-            1 -> TYPE_MEDIA_TYPES_CONTAINER
+            1 -> TYPE_FOLDERS_GRID
             2 -> TYPE_HEADER_MORE
             3 -> TYPE_MORE_CONTAINER
-            else -> TYPE_MEDIA_TYPES_CONTAINER
+            else -> TYPE_MORE_CONTAINER
         }
     }
 
@@ -35,7 +36,7 @@ class AlbumsAdapter(
                 val view = inflater.inflate(R.layout.item_section_header, parent, false)
                 HeaderViewHolder(view)
             }
-            TYPE_MEDIA_TYPES_CONTAINER -> {
+            TYPE_FOLDERS_GRID -> {
                 val view = inflater.inflate(R.layout.item_media_types_card, parent, false)
                 MediaTypesViewHolder(view)
             }
@@ -53,16 +54,27 @@ class AlbumsAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is HeaderViewHolder -> {
-                if (position == 0) holder.title.text = "Featured"
-                else if (position == 2) holder.title.text = "Media types"
+                if (position == 0) holder.title.text = "Albums & Folders"
+                else if (position == 2) holder.title.text = "Utilities"
             }
             is MediaTypesViewHolder -> {
-                holder.item1.setOnClickListener { onSectionClick("Motion Photo") }
+                // Yahan device ke actual folders bind honge
+                val folderText = if (foldersList.isNotEmpty()) foldersList.joinToString(", ") else "Camera, DCIM, WhatsApp"
+                holder.item1.visibility = View.VISIBLE
+                // Simple label set kar rahe hain folders ke liye
+                val tv = holder.item1.findViewById<TextView>(android.R.id.text1)
+                tv?.text = "Device Folders ($folderText)"
+                
+                holder.item1.setOnClickListener { onSectionClick("Folders") }
                 holder.item2.setOnClickListener { onSectionClick("Portrait") }
                 holder.item3.setOnClickListener { onSectionClick("RAW") }
                 holder.item4.setOnClickListener { onSectionClick("Bursts") }
             }
             is MoreViewHolder -> {
+                // Recently deleted binList ka real size dikhayega (Dummy 180 hata diya)
+                val deletedCount = TrashStorage.binList.size
+                holder.deletedCountText.text = "$deletedCount >"
+
                 holder.privateAlbum.setOnClickListener { onSectionClick("Private") }
                 holder.cleanup.setOnClickListener { onSectionClick("Cleanup suggestions") }
                 holder.deleted.setOnClickListener { onSectionClick("Recently deleted") }
@@ -87,5 +99,6 @@ class AlbumsAdapter(
         val privateAlbum: View = view.findViewById(R.id.layoutPrivate)
         val cleanup: View = view.findViewById(R.id.layoutCleanup)
         val deleted: View = view.findViewById(R.id.layoutDeleted)
+        val deletedCountText: TextView = deleted.findViewById(android.R.id.content) // Fallback text view reference
     }
 }
