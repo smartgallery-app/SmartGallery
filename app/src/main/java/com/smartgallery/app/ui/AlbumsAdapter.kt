@@ -12,15 +12,17 @@ class AlbumsAdapter(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        const val TYPE_HEADER = 0
+        const val TYPE_HEADER_FEATURED = 0
         const val TYPE_MEDIA_TYPES_CONTAINER = 1
-        const val TYPE_MORE_CONTAINER = 2
+        const val TYPE_HEADER_MORE = 2
+        const val TYPE_MORE_CONTAINER = 3
     }
 
     override fun getItemViewType(position: Int): Int {
         return when (position) {
-            0, 2 -> TYPE_HEADER
+            0 -> TYPE_HEADER_FEATURED
             1 -> TYPE_MEDIA_TYPES_CONTAINER
+            2 -> TYPE_HEADER_MORE
             3 -> TYPE_MORE_CONTAINER
             else -> TYPE_MEDIA_TYPES_CONTAINER
         }
@@ -29,7 +31,7 @@ class AlbumsAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
-            TYPE_HEADER -> {
+            TYPE_HEADER_FEATURED, TYPE_HEADER_MORE -> {
                 val view = inflater.inflate(R.layout.item_section_header, parent, false)
                 HeaderViewHolder(view)
             }
