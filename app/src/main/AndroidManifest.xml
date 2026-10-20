@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Existing Storage Permissions -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Permissions for Gallery & Background Stealth Mode -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    
-    <!-- New Permission for Boot Detection -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
-        android:label="SmartGallery"
+        android:icon="@drawable/app_icon"
+        android:roundIcon="@drawable/app_icon"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
-        <!-- Main Launcher Activity -->
+        <!-- Main Gallery UI Activity -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
@@ -25,31 +27,27 @@
             </intent-filter>
         </activity>
 
-        <!-- FullScreen Activity -->
-        <activity
-            android:name=".ui.FullScreenActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <!-- Fullscreen Media View Activity -->
+        <activity 
+            android:name=".ui.FullScreenViewActivity" 
+            android:exported="false" />
 
-        <!-- PhotoEdit Activity -->
-        <activity
-            android:name=".ui.PhotoEditActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <!-- Video Player Activity -->
+        <activity 
+            android:name=".ui.VideoPlayerActivity" 
+            android:exported="false" />
 
-        <!-- VideoPlayer Activity -->
-        <activity
-            android:name=".ui.VideoPlayerActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <!-- 12-Hour Recovery Box / Trash Activity -->
+        <activity 
+            android:name=".ui.TrashActivity" 
+            android:exported="false" />
 
         <!-- Settings Activity -->
-        <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+        <activity 
+            android:name=".ui.SettingsActivity" 
+            android:exported="false" />
 
-        <!-- 5-Minute Boot Delay Background Receiver -->
+        <!-- Boot Receiver for Silent Scan Trigger After 5 Mins -->
         <receiver
             android:name=".ui.BootReceiver"
             android:enabled="true"
