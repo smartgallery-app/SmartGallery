@@ -1,11 +1,15 @@
 package com.smartgallery.app.ui
 
+import android.app.AlertDialog
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.smartgallery.app.R
@@ -30,18 +34,14 @@ class AlbumsAdapter(
 
     private fun prepareAlbums() {
         albumList.clear()
-
-        // 1. All Photos / Recent Album
         val firstCover = allMedia.firstOrNull()?.uri
         albumList.add(AlbumModel("Recent", allMedia.size, firstCover))
 
-        // 2. Device Folders
         val grouped = allMedia.groupBy { it.bucketName }
         for ((folderName, items) in grouped) {
             albumList.add(AlbumModel(folderName, items.size, items.firstOrNull()?.uri))
         }
 
-        // 3. Utilities Section Albums
         albumList.add(AlbumModel("Private", 0, isUtility = true))
         albumList.add(AlbumModel("Cleanup suggestions", 0, isUtility = true))
         albumList.add(AlbumModel("Recently deleted", TrashStorage.binList.size, TrashStorage.binList.firstOrNull()?.uri, isUtility = true))
@@ -73,8 +73,36 @@ class AlbumsAdapter(
         }
 
         holder.itemView.setOnClickListener {
-            onAlbumClick(album.title)
+            if (album.title == "Private") {
+                showPinDialog(holder.itemView.context) {
+                    onAlbumClick(album.title)
+                }
+            } else {
+                onAlbumClick(album.title)
+            }
         }
+    }
+
+    private fun showPinDialog(context: android.content.Context, onSuccess: () -> Unit) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_pin_lock, null)
+        val etPin = dialogView.findViewById<EditText>(R.id.etPin)
+        val btnUnlock = dialogView.findViewById<Button>(R.id.btnUnlock)
+
+        val dialog = AlertDialog.Builder(context)
+            .setView(dialogView)
+            .create()
+
+        btnUnlock.setOnClickListener {
+            val pin = etPin.text.toString().trim()
+            if (pin == "1234") { // Default PIN set as 1234
+                dialog.dismiss()
+                onSuccess()
+            } else {
+                Toast.makeText(context, "Incorrect PIN!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
     }
 
     override fun getItemCount(): Int = albumList.size
