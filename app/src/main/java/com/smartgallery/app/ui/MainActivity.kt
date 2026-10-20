@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -18,6 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.button.MaterialButton
 import com.smartgallery.app.R
 
 class MainActivity : AppCompatActivity() {
@@ -25,6 +28,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var bottomNav: BottomNavigationView
     private lateinit var toolbar: Toolbar
+    private lateinit var selectionActionBar: LinearLayout
+    private lateinit var btnMultiShare: MaterialButton
+    private lateinit var btnMultiDelete: MaterialButton
+
     private val allMediaList = ArrayList<MediaItem>()
     private val PERMISSION_REQUEST_CODE = 101
 
@@ -38,6 +45,9 @@ class MainActivity : AppCompatActivity() {
 
             recyclerView = findViewById(R.id.recyclerView)
             bottomNav = findViewById(R.id.bottomNavigation)
+            selectionActionBar = findViewById(R.id.selectionActionBar)
+            btnMultiShare = findViewById(R.id.btnMultiShare)
+            btnMultiDelete = findViewById(R.id.btnMultiDelete)
 
             recyclerView.layoutManager = GridLayoutManager(this, 3)
 
@@ -135,10 +145,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPhotosView() {
-        recyclerView.adapter = GalleryAdapter(allMediaList, isAlbumView = false)
+        val adapter = GalleryAdapter(allMediaList, isAlbumView = false) { selectedCount ->
+            if (selectedCount > 0) {
+                selectionActionBar.visibility = View.VISIBLE
+                supportActionBar?.title = "$selectedCount Selected"
+            } else {
+                selectionActionBar.visibility = View.GONE
+                supportActionBar?.title = "Photos"
+            }
+        }
+        recyclerView.adapter = adapter
+
+        // Multi-Delete Action
+        btnMultiDelete.setOnClickListener {
+            val selectedPositions = adapter.selectedItems.toList().sortedDescending()
+            for (pos in selectedPositions) {
+                if (pos < allMediaList.size) {
+                    TrashStorage.binList.add(allMediaList[pos])
+                    allMediaList.removeAt(pos)
+                }
+            }
+            adapter.selectedItems.clear()
+            adapter.isMultiSelectMode = false
+            adapter.notifyDataSetChanged()
+            selectionActionBar.visibility = View.GONE
+            supportActionBar?.title = "Photos"
+            Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
+        }
+
+        // Multi-Share Action
+        btnMultiShare.setOnClickListener {
+            val uris = ArrayList<android.net.Uri>()
+            for (pos in adapter.selectedItems) {
+                if (pos < allMediaList.size) {
+                    uris.add(android.net.Uri.parse(allMediaList[pos].uri))
+                }
+            }
+            if (uris.isNotEmpty()) {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND_MULTIPLE
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    type = "image/*"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(shareIntent, "Share via"))
+            }
+        }
     }
 
     private fun loadAlbumsView() {
+        selectionActionBar.visibility = View.GONE
         val folders = listOf("Camera", "DCIM", "WhatsApp")
         recyclerView.adapter = AlbumsAdapter(folders) { sectionName ->
             Toast.makeText(this, "Opening $sectionName", Toast.LENGTH_SHORT).show()
