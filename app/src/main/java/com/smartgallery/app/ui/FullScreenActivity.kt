@@ -34,8 +34,8 @@ class FullScreenActivity : AppCompatActivity() {
             val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
             val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
-            // Direct MediaItem class object pass ho raha hai
-            val mediaList = listOf(MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder))
+            val currentItem = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
+            val mediaList = listOf(currentItem)
             val adapter = MediaPagerAdapter(mediaList)
             viewPager.adapter = adapter
 
@@ -68,8 +68,7 @@ class FullScreenActivity : AppCompatActivity() {
 
             btnDelete?.setOnClickListener {
                 if (mediaUriStr.isNotEmpty()) {
-                    val itemToDelete = MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder)
-                    TrashStorage.binList.add(itemToDelete)
+                    TrashStorage.binList.add(currentItem)
                     Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
                     finish()
                 }
