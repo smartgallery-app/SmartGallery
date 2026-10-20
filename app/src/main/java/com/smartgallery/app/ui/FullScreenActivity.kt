@@ -7,9 +7,7 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.github.chrisbanes.photoview.PhotoView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.button.MaterialButton
 import com.smartgallery.app.R
 import java.text.SimpleDateFormat
@@ -22,7 +20,7 @@ class FullScreenActivity : AppCompatActivity() {
         setContentView(R.layout.activity_full_screen)
 
         try {
-            val photoView = findViewById<PhotoView>(R.id.fullImageView)
+            val viewPager = findViewById<ViewPager2>(R.id.viewPager)
             val infoText = findViewById<TextView>(R.id.infoTextView)
 
             val btnShare = findViewById<MaterialButton>(R.id.btnShare)
@@ -36,13 +34,10 @@ class FullScreenActivity : AppCompatActivity() {
             val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
             val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
-            if (mediaUriStr.isNotEmpty()) {
-                // Glide with PhotoView supports smooth pinch-to-zoom
-                Glide.with(this)
-                    .load(Uri.parse(mediaUriStr))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .into(photoView)
-            }
+            // ViewPager2 ke liye media list setup
+            val mediaList = listOf(MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder))
+            val adapter = MediaPagerAdapter(mediaList)
+            viewPager.adapter = adapter
 
             val formattedDate = if (mediaDate > 0) {
                 SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(mediaDate))
