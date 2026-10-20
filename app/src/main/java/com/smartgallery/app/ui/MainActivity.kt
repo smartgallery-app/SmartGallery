@@ -14,8 +14,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.smartgallery.app.R
@@ -38,6 +38,9 @@ class MainActivity : AppCompatActivity() {
 
             recyclerView = findViewById(R.id.recyclerView)
             bottomNav = findViewById(R.id.bottomNavigation)
+
+            // Default Photos view set kar rahe hain
+            recyclerView.layoutManager = GridLayoutManager(this, 3)
 
             bottomNav.setOnItemSelectedListener { item ->
                 when (item.itemId) {
@@ -88,9 +91,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(permission), PERMISSION_REQUEST_CODE)
+            ActivityCompat.requestPermissions(this, arrayOf(permission), arrayOf(permission).indices.let { PERMISSION_REQUEST_CODE })
         } else {
             loadDeviceMedia()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            loadDeviceMedia()
+        } else {
+            Toast.makeText(this, "Permission denied to read photos", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -107,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             contentResolver.query(queryUri, projection, null, null, "${MediaStore.Images.Media.DATE_ADDED} DESC")?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Namespaced?.let { MediaStore.Images.Media.BUCKET_DISPLAY_NAME } ?: MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
@@ -128,7 +140,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAlbumsView() {
-        // Multi-Section Structured Albums Adapter Set Kar Diya
         recyclerView.adapter = AlbumsAdapter { sectionName ->
             Toast.makeText(this, "Opening $sectionName", Toast.LENGTH_SHORT).show()
         }
