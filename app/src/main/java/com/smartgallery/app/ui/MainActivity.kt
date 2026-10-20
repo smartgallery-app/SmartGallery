@@ -36,43 +36,38 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main)
 
-            toolbar = findViewById(R.id.toolbar)
-            setSupportActionBar(toolbar)
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
-            recyclerView = findViewById(R.id.recyclerView)
-            bottomNav = findViewById(R.id.bottomNavigation)
-            selectionActionBar = findViewById(R.id.selectionActionBar)
-            btnMultiShare = findViewById(R.id.btnMultiShare)
-            btnMultiDelete = findViewById(R.id.btnMultiDelete)
+        recyclerView = findViewById(R.id.recyclerView)
+        bottomNav = findViewById(R.id.bottomNavigation)
+        selectionActionBar = findViewById(R.id.selectionActionBar)
+        btnMultiShare = findViewById(R.id.btnMultiShare)
+        btnMultiDelete = findViewById(R.id.btnMultiDelete)
 
-            recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
 
-            bottomNav.setOnItemSelectedListener { item ->
-                when (item.itemId) {
-                    R.id.nav_photos -> {
-                        supportActionBar?.title = "Photos"
-                        recyclerView.layoutManager = GridLayoutManager(this, 3)
-                        loadPhotosView()
-                        true
-                    }
-                    R.id.nav_albums -> {
-                        supportActionBar?.title = "Albums"
-                        recyclerView.layoutManager = GridLayoutManager(this, 3)
-                        loadAlbumsView()
-                        true
-                    }
-                    else -> false
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_photos -> {
+                    supportActionBar?.title = "Photos"
+                    recyclerView.layoutManager = GridLayoutManager(this, 3)
+                    loadPhotosView()
+                    true
                 }
+                R.id.nav_albums -> {
+                    supportActionBar?.title = "Albums"
+                    recyclerView.layoutManager = GridLayoutManager(this, 3)
+                    loadAlbumsView()
+                    true
+                }
+                else -> false
             }
-
-            checkAndRequestPermissions()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "App started with an issue, reloading...", Toast.LENGTH_SHORT).show()
         }
+
+        checkAndRequestPermissions()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -111,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             loadDeviceMedia()
         } else {
-            Toast.makeText(this, "Permission required to display photos", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permission required to view photos", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -145,77 +140,70 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPhotosView() {
-        try {
-            val adapter = GalleryAdapter(allMediaList, isAlbumView = false) { selectedCount ->
-                if (selectedCount > 0) {
-                    selectionActionBar.visibility = View.VISIBLE
-                    supportActionBar?.title = "$selectedCount Selected"
-                } else {
-                    selectionActionBar.visibility = View.GONE
-                    supportActionBar?.title = "Photos"
-                }
-            }
-            recyclerView.adapter = adapter
-
-            btnMultiDelete.setOnClickListener {
-                val selectedPositions = adapter.selectedItems.toList().sortedDescending()
-                for (pos in selectedPositions) {
-                    if (pos < allMediaList.size) {
-                        TrashStorage.binList.add(allMediaList[pos])
-                        allMediaList.removeAt(pos)
-                    }
-                }
-                adapter.selectedItems.clear()
-                adapter.isMultiSelectMode = false
-                adapter.notifyDataSetChanged()
+        selectionActionBar.visibility = View.GONE
+        val adapter = GalleryAdapter(allMediaList, isAlbumView = false) { selectedCount ->
+            if (selectedCount > 0) {
+                selectionActionBar.visibility = View.VISIBLE
+                supportActionBar?.title = "$selectedCount Selected"
+            } else {
                 selectionActionBar.visibility = View.GONE
                 supportActionBar?.title = "Photos"
-                Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
             }
+        }
+        recyclerView.adapter = adapter
 
-            btnMultiShare.setOnClickListener {
-                val uris = ArrayList<android.net.Uri>()
-                for (pos in adapter.selectedItems) {
-                    if (pos < allMediaList.size) {
-                        uris.add(android.net.Uri.parse(allMediaList[pos].uri))
-                    }
-                }
-                if (uris.isNotEmpty()) {
-                    val shareIntent = Intent().apply {
-                        action = Intent.ACTION_SEND_MULTIPLE
-                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                        type = "image/*"
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    startActivity(Intent.createChooser(shareIntent, "Share via"))
+        btnMultiDelete.setOnClickListener {
+            val selectedPositions = adapter.selectedItems.toList().sortedDescending()
+            for (pos in selectedPositions) {
+                if (pos < allMediaList.size) {
+                    TrashStorage.binList.add(allMediaList[pos])
+                    allMediaList.removeAt(pos)
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            adapter.selectedItems.clear()
+            adapter.isMultiSelectMode = false
+            adapter.notifyDataSetChanged()
+            selectionActionBar.visibility = View.GONE
+            supportActionBar?.title = "Photos"
+            Toast.makeText(this, "Moved to Recently Deleted", Toast.LENGTH_SHORT).show()
+        }
+
+        btnMultiShare.setOnClickListener {
+            val uris = ArrayList<android.net.Uri>()
+            for (pos in adapter.selectedItems) {
+                if (pos < allMediaList.size) {
+                    uris.add(android.net.Uri.parse(allMediaList[pos].uri))
+                }
+            }
+            if (uris.isNotEmpty()) {
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND_MULTIPLE
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    type = "image/*"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(Intent.createChooser(shareIntent, "Share via"))
+            }
         }
     }
 
     private fun loadAlbumsView() {
-        try {
-            selectionActionBar.visibility = View.GONE
-            recyclerView.layoutManager = GridLayoutManager(this, 3)
-            recyclerView.adapter = AlbumsAdapter(allMediaList) { albumName ->
-                if (albumName == "Recently deleted") {
-                    val trashAdapter = GalleryAdapter(TrashStorage.binList, isAlbumView = true)
-                    recyclerView.adapter = trashAdapter
-                    supportActionBar?.title = "Recently Deleted"
-                } else if (albumName == "Recent") {
-                    loadPhotosView()
-                    supportActionBar?.title = "Photos"
-                } else {
-                    val filteredList = allMediaList.filter { it.bucketName == albumName }
-                    val folderAdapter = GalleryAdapter(filteredList, isAlbumView = true)
-                    recyclerView.adapter = folderAdapter
-                    supportActionBar?.title = albumName
-                }
+        selectionActionBar.visibility = View.GONE
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.adapter = AlbumsAdapter(allMediaList) { albumName ->
+            if (albumName == "Recently deleted") {
+                val trashAdapter = GalleryAdapter(TrashStorage.binList, isAlbumView = true)
+                recyclerView.adapter = trashAdapter
+                supportActionBar?.title = "Recently Deleted"
+            } else if (albumName == "Recent") {
+                loadPhotosView()
+                supportActionBar?.title = "Photos"
+            } else {
+                val filteredList = allMediaList.filter { it.bucketName == albumName }
+                val folderAdapter = GalleryAdapter(filteredList, isAlbumView = true)
+                recyclerView.adapter = folderAdapter
+                supportActionBar?.title = albumName
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
