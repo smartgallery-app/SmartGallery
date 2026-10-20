@@ -34,7 +34,7 @@ class FullScreenActivity : AppCompatActivity() {
             val mediaFolder = intent.getStringExtra("MEDIA_FOLDER") ?: "Camera"
             val mediaDate = intent.getLongExtra("MEDIA_DATE", 0L) * 1000L
 
-            // ViewPager2 ke liye media list setup
+            // Direct MediaItem class object pass ho raha hai
             val mediaList = listOf(MediaItem(mediaId, mediaUriStr, mediaDate / 1000L, mediaFolder))
             val adapter = MediaPagerAdapter(mediaList)
             viewPager.adapter = adapter
