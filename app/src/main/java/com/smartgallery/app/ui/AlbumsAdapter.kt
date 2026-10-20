@@ -13,7 +13,8 @@ import com.smartgallery.app.R
 data class AlbumModel(
     val title: String,
     val count: Int,
-    val coverUri: String? = null
+    val coverUri: String? = null,
+    val isUtility: Boolean = false
 )
 
 class AlbumsAdapter(
@@ -30,20 +31,20 @@ class AlbumsAdapter(
     private fun prepareAlbums() {
         albumList.clear()
 
-        // Real Phone Media Grouping by Folder Name
-        val grouped = allMedia.groupBy { it.bucketName }
-
-        // 1. Permanent All Photos / Recent Album
+        // 1. All Photos / Recent Album
         val firstCover = allMedia.firstOrNull()?.uri
         albumList.add(AlbumModel("Recent", allMedia.size, firstCover))
 
-        // 2. Real Device Folders (Camera, Screenshots, WhatsApp, etc.)
+        // 2. Device Folders
+        val grouped = allMedia.groupBy { it.bucketName }
         for ((folderName, items) in grouped) {
             albumList.add(AlbumModel(folderName, items.size, items.firstOrNull()?.uri))
         }
 
-        // 3. Recently Deleted Album with Real Trash Storage Count
-        albumList.add(AlbumModel("Recently deleted", TrashStorage.binList.size, TrashStorage.binList.firstOrNull()?.uri))
+        // 3. Utilities Section Albums
+        albumList.add(AlbumModel("Private", 0, isUtility = true))
+        albumList.add(AlbumModel("Cleanup suggestions", 0, isUtility = true))
+        albumList.add(AlbumModel("Recently deleted", TrashStorage.binList.size, TrashStorage.binList.firstOrNull()?.uri, isUtility = true))
     }
 
     class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -61,7 +62,7 @@ class AlbumsAdapter(
     override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
         val album = albumList[position]
         holder.title.text = album.title
-        holder.count.text = "${album.count} items"
+        holder.count.text = if (album.title == "Private" || album.title == "Cleanup suggestions") ">" else "${album.count} items"
 
         if (!album.coverUri.isNullOrEmpty()) {
             Glide.with(holder.itemView.context)
