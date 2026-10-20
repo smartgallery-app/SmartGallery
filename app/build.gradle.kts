@@ -51,9 +51,8 @@ dependencies {
     // Background Coroutines Engine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Google ML Kit for AI Scanner & Safety Box
-    implementation("com.google.android.gms:play-services-mlkit-image-labeling:16.0.8")
-    implementation("com.google.android.gms:play-services-mlkit-object-detection:17.0.1")
+    // Google Play Services Vision for Detection
+    implementation("com.google.android.gms:play-services-vision:20.1.3")
 
     // Photo Zoom Library (Pinch-to-Zoom support for FullScreen viewer)
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
