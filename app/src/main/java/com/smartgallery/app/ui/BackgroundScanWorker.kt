@@ -42,14 +42,8 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
                 val dateAdded = c.getLong(dateColumn)
                 val bucketName = c.getString(bucketColumn) ?: "Gallery"
 
-                // Pass all 5 parameters as required by your MediaItem data class
-                val mediaItem = MediaItem(
-                    id = id,
-                    path = path,
-                    name = "Scanned File",
-                    dateAdded = dateAdded,
-                    bucketName = bucketName
-                )
+                // Direct positional parameters (No parameter name matching required)
+                val mediaItem = MediaItem(id, path, "Scanned File", dateAdded, bucketName)
 
                 if (mimeType.startsWith("video/")) {
                     val videoUri = Uri.parse(path)
