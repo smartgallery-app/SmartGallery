@@ -62,18 +62,13 @@ class FullScreenActivity : AppCompatActivity() {
                 Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
             }
 
-            // System Editor Open Logic
+            // Edit Button - Opens PhotoEditActivity with Filters
             btnEdit?.setOnClickListener {
                 if (mediaUriStr.isNotEmpty()) {
-                    try {
-                        val editIntent = Intent(Intent.ACTION_EDIT).apply {
-                            setDataAndType(Uri.parse(mediaUriStr), "image/*")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        startActivity(Intent.createChooser(editIntent, "Edit photo with"))
-                    } catch (e: Exception) {
-                        Toast.makeText(this, "No photo editor found on device", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, PhotoEditActivity::class.java).apply {
+                        putExtra("EDIT_URI", mediaUriStr)
                     }
+                    startActivity(intent)
                 }
             }
 
