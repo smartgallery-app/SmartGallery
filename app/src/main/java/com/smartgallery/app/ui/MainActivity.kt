@@ -139,7 +139,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAlbumsView() {
-        recyclerView.adapter = AlbumsAdapter { sectionName ->
+        val folders = listOf("Camera", "DCIM", "WhatsApp")
+        recyclerView.adapter = AlbumsAdapter(folders) { sectionName ->
             Toast.makeText(this, "Opening $sectionName", Toast.LENGTH_SHORT).show()
         }
     }
