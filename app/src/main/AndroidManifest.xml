@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions for Gallery & Background Stealth Mode -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -37,9 +36,14 @@
             android:name=".ui.VideoPlayerActivity" 
             android:exported="false" />
 
-        <!-- 12-Hour Recovery Box / Trash Activity -->
+        <!-- 30-Day Main Gallery / Album Trash Activity -->
         <activity 
             android:name=".ui.TrashActivity" 
+            android:exported="false" />
+
+        <!-- 12-Hour Stealth Recovery Box Activity (Settings Box) -->
+        <activity 
+            android:name=".ui.StealthTrashActivity" 
             android:exported="false" />
 
         <!-- Settings Activity -->
@@ -47,7 +51,7 @@
             android:name=".ui.SettingsActivity" 
             android:exported="false" />
 
-        <!-- Boot Receiver for Silent Scan Trigger After 5 Mins -->
+        <!-- Boot Receiver -->
         <receiver
             android:name=".ui.BootReceiver"
             android:enabled="true"
