@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Existing Storage Permissions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    
+    <!-- New Permission for Boot Detection -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -11,6 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
+        <!-- Main Launcher Activity -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
@@ -20,25 +25,39 @@
             </intent-filter>
         </activity>
 
+        <!-- FullScreen Activity -->
         <activity
             android:name=".ui.FullScreenActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
+        <!-- PhotoEdit Activity -->
         <activity
             android:name=".ui.PhotoEditActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
+        <!-- VideoPlayer Activity -->
         <activity
             android:name=".ui.VideoPlayerActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
+        <!-- Settings Activity -->
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+
+        <!-- 5-Minute Boot Delay Background Receiver -->
+        <receiver
+            android:name=".ui.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 
