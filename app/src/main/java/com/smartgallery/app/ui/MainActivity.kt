@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
             recyclerView = findViewById(R.id.recyclerView)
             bottomNav = findViewById(R.id.bottomNavigation)
 
-            // Default Photos view set kar rahe hain
             recyclerView.layoutManager = GridLayoutManager(this, 3)
 
             bottomNav.setOnItemSelectedListener { item ->
@@ -91,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(permission), arrayOf(permission).indices.let { PERMISSION_REQUEST_CODE })
+            ActivityCompat.requestPermissions(this, arrayOf(permission), PERMISSION_REQUEST_CODE)
         } else {
             loadDeviceMedia()
         }
@@ -119,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             contentResolver.query(queryUri, projection, null, null, "${MediaStore.Images.Media.DATE_ADDED} DESC")?.use { cursor ->
                 val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
                 val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Namespaced?.let { MediaStore.Images.Media.BUCKET_DISPLAY_NAME } ?: MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idCol)
