@@ -29,22 +29,21 @@ class AlbumsAdapter(
 
     private fun prepareAlbums() {
         albumList.clear()
-        
-        // Dynamic Folder Grouping
-        val grouped = allMedia.groupBy { it.bucketName }
-        
-        // 1. Pin Section items
-        val recentCover = allMedia.firstOrNull()?.uri
-        albumList.add(AlbumModel("Recent", allMedia.size, recentCover))
 
-        for ((folder, items) in grouped) {
-            albumList.add(AlbumModel(folder, items.size, items.firstOrNull()?.uri))
+        // Real Phone Media Grouping by Folder Name
+        val grouped = allMedia.groupBy { it.bucketName }
+
+        // 1. Permanent All Photos / Recent Album
+        val firstCover = allMedia.firstOrNull()?.uri
+        albumList.add(AlbumModel("Recent", allMedia.size, firstCover))
+
+        // 2. Real Device Folders (Camera, Screenshots, WhatsApp, etc.)
+        for ((folderName, items) in grouped) {
+            albumList.add(AlbumModel(folderName, items.size, items.firstOrNull()?.uri))
         }
 
-        // Dummy categories to match OnePlus layout
-        if (grouped["Camera"] == null) albumList.add(AlbumModel("Camera", 0, recentCover))
-        if (grouped["Videos"] == null) albumList.add(AlbumModel("Videos", 0, recentCover))
-        if (grouped["Screenshots"] == null) albumList.add(AlbumModel("Screenshots", 0, recentCover))
+        // 3. Recently Deleted Album with Real Trash Storage Count
+        albumList.add(AlbumModel("Recently deleted", TrashStorage.binList.size, TrashStorage.binList.firstOrNull()?.uri))
     }
 
     class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -62,7 +61,7 @@ class AlbumsAdapter(
     override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
         val album = albumList[position]
         holder.title.text = album.title
-        holder.count.text = album.count.toString()
+        holder.count.text = "${album.count} items"
 
         if (!album.coverUri.isNullOrEmpty()) {
             Glide.with(holder.itemView.context)
