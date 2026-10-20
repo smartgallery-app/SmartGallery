@@ -1,113 +1,81 @@
 package com.smartgallery.app.ui
 
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.smartgallery.app.R
 
+data class AlbumModel(
+    val title: String,
+    val count: Int,
+    val coverUri: String? = null
+)
+
 class AlbumsAdapter(
-    private val foldersList: List<String>,
-    private val onSectionClick: (String) -> Unit
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private val allMedia: List<MediaItem>,
+    private val onAlbumClick: (String) -> Unit
+) : RecyclerView.Adapter<AlbumsAdapter.AlbumViewHolder>() {
 
-    companion object {
-        const val TYPE_HEADER_FEATURED = 0
-        const val TYPE_FOLDERS_GRID = 1
-        const val TYPE_HEADER_MORE = 2
-        const val TYPE_MORE_CONTAINER = 3
+    private val albumList = ArrayList<AlbumModel>()
+
+    init {
+        prepareAlbums()
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return when (position) {
-            0 -> TYPE_HEADER_FEATURED
-            1 -> TYPE_FOLDERS_GRID
-            2 -> TYPE_HEADER_MORE
-            3 -> TYPE_MORE_CONTAINER
-            else -> TYPE_MORE_CONTAINER
+    private fun prepareAlbums() {
+        albumList.clear()
+        
+        // Dynamic Folder Grouping
+        val grouped = allMedia.groupBy { it.bucketName }
+        
+        // 1. Pin Section items
+        val recentCover = allMedia.firstOrNull()?.uri
+        albumList.add(AlbumModel("Recent", allMedia.size, recentCover))
+
+        for ((folder, items) in grouped) {
+            albumList.add(AlbumModel(folder, items.size, items.firstOrNull()?.uri))
+        }
+
+        // Dummy categories to match OnePlus layout
+        if (grouped["Camera"] == null) albumList.add(AlbumModel("Camera", 0, recentCover))
+        if (grouped["Videos"] == null) albumList.add(AlbumModel("Videos", 0, recentCover))
+        if (grouped["Screenshots"] == null) albumList.add(AlbumModel("Screenshots", 0, recentCover))
+    }
+
+    class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val coverImage: ImageView = view.findViewById(R.id.albumCoverImage)
+        val title: TextView = view.findViewById(R.id.albumTitle)
+        val count: TextView = view.findViewById(R.id.albumCount)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_album_card, parent, false)
+        return AlbumViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
+        val album = albumList[position]
+        holder.title.text = album.title
+        holder.count.text = album.count.toString()
+
+        if (!album.coverUri.isNullOrEmpty()) {
+            Glide.with(holder.itemView.context)
+                .load(Uri.parse(album.coverUri))
+                .into(holder.coverImage)
+        } else {
+            holder.coverImage.setBackgroundColor(0xFF222222.toInt())
+        }
+
+        holder.itemView.setOnClickListener {
+            onAlbumClick(album.title)
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        return when (viewType) {
-            TYPE_HEADER_FEATURED, TYPE_HEADER_MORE -> {
-                val view = inflater.inflate(R.layout.item_section_header, parent, false)
-                HeaderViewHolder(view)
-            }
-            TYPE_FOLDERS_GRID -> {
-                val view = inflater.inflate(R.layout.item_media_types_card, parent, false)
-                MediaTypesViewHolder(view)
-            }
-            TYPE_MORE_CONTAINER -> {
-                val view = inflater.inflate(R.layout.item_more_card, parent, false)
-                MoreViewHolder(view)
-            }
-            else -> {
-                val view = inflater.inflate(R.layout.item_media_types_card, parent, false)
-                MediaTypesViewHolder(view)
-            }
-        }
-    }
-
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        when (holder) {
-            is HeaderViewHolder -> {
-                if (position == 0) {
-                    holder.title.text = "Albums & Folders"
-                } else if (position == 2) {
-                    holder.title.text = "Utilities"
-                }
-            }
-            is MediaTypesViewHolder -> {
-                val folderText = if (foldersList.isNotEmpty()) foldersList.joinToString(", ") else "Camera, DCIM, WhatsApp"
-                
-                // Safe check taaki app crash na ho
-                try {
-                    val tv = holder.item1.findViewById<TextView>(android.R.id.text1)
-                    tv?.text = "Folders: $folderText"
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                holder.item1.setOnClickListener { onSectionClick("Folders") }
-                holder.item2.setOnClickListener { onSectionClick("Portrait") }
-                holder.item3.setOnClickListener { onSectionClick("RAW") }
-                holder.item4.setOnClickListener { onSectionClick("Bursts") }
-            }
-            is MoreViewHolder -> {
-                try {
-                    val deletedCount = TrashStorage.binList.size
-                    holder.deletedCountText?.text = "$deletedCount >"
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                holder.privateAlbum.setOnClickListener { onSectionClick("Private") }
-                holder.cleanup.setOnClickListener { onSectionClick("Cleanup suggestions") }
-                holder.deleted.setOnClickListener { onSectionClick("Recently deleted") }
-            }
-        }
-    }
-
-    override fun getItemCount(): Int = 4
-
-    class HeaderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val title: TextView = view.findViewById(R.id.sectionTitleText)
-    }
-
-    class MediaTypesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val item1: View = view.findViewById(R.id.layoutMotionPhoto)
-        val item2: View = view.findViewById(R.id.layoutPortrait)
-        val item3: View = view.findViewById(R.id.layoutRaw)
-        val item4: View = view.findViewById(R.id.layoutBursts)
-    }
-
-    class MoreViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val privateAlbum: View = view.findViewById(R.id.layoutPrivate)
-        val cleanup: View = view.findViewById(R.id.layoutCleanup)
-        val deleted: View = view.findViewById(R.id.layoutDeleted)
-        val deletedCountText: TextView? = try { deleted.findViewById(android.R.id.content) } catch (e: Exception) { null }
-    }
+    override fun getItemCount(): Int = albumList.size
 }
