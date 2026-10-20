@@ -54,26 +54,35 @@ class AlbumsAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is HeaderViewHolder -> {
-                if (position == 0) holder.title.text = "Albums & Folders"
-                else if (position == 2) holder.title.text = "Utilities"
+                if (position == 0) {
+                    holder.title.text = "Albums & Folders"
+                } else if (position == 2) {
+                    holder.title.text = "Utilities"
+                }
             }
             is MediaTypesViewHolder -> {
-                // Yahan device ke actual folders bind honge
                 val folderText = if (foldersList.isNotEmpty()) foldersList.joinToString(", ") else "Camera, DCIM, WhatsApp"
-                holder.item1.visibility = View.VISIBLE
-                // Simple label set kar rahe hain folders ke liye
-                val tv = holder.item1.findViewById<TextView>(android.R.id.text1)
-                tv?.text = "Device Folders ($folderText)"
                 
+                // Safe check taaki app crash na ho
+                try {
+                    val tv = holder.item1.findViewById<TextView>(android.R.id.text1)
+                    tv?.text = "Folders: $folderText"
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
                 holder.item1.setOnClickListener { onSectionClick("Folders") }
                 holder.item2.setOnClickListener { onSectionClick("Portrait") }
                 holder.item3.setOnClickListener { onSectionClick("RAW") }
                 holder.item4.setOnClickListener { onSectionClick("Bursts") }
             }
             is MoreViewHolder -> {
-                // Recently deleted binList ka real size dikhayega (Dummy 180 hata diya)
-                val deletedCount = TrashStorage.binList.size
-                holder.deletedCountText.text = "$deletedCount >"
+                try {
+                    val deletedCount = TrashStorage.binList.size
+                    holder.deletedCountText?.text = "$deletedCount >"
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 holder.privateAlbum.setOnClickListener { onSectionClick("Private") }
                 holder.cleanup.setOnClickListener { onSectionClick("Cleanup suggestions") }
@@ -99,6 +108,6 @@ class AlbumsAdapter(
         val privateAlbum: View = view.findViewById(R.id.layoutPrivate)
         val cleanup: View = view.findViewById(R.id.layoutCleanup)
         val deleted: View = view.findViewById(R.id.layoutDeleted)
-        val deletedCountText: TextView = deleted.findViewById(android.R.id.content) // Fallback text view reference
+        val deletedCountText: TextView? = try { deleted.findViewById(android.R.id.content) } catch (e: Exception) { null }
     }
 }
