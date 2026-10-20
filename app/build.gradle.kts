@@ -41,7 +41,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
 
-    // WorkManager Dependency for Silent Background Scanner
+    // WorkManager Dependency for Background Scanning
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Glide for Fast Gallery Images
@@ -51,9 +51,9 @@ dependencies {
     // Background Coroutines Engine
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Google Play Services Vision for Detection
-    implementation("com.google.android.gms:play-services-vision:20.1.3")
+    // Google ML Kit Official Image Labeling (AI Scanner)
+    implementation("com.google.mlkit:image-labeling:17.0.7")
 
-    // Photo Zoom Library (Pinch-to-Zoom support for FullScreen viewer)
+    // Photo Zoom Library
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
 }
