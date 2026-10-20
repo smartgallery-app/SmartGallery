@@ -21,15 +21,13 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
             MediaStore.MediaColumns.MIME_TYPE
         )
 
-        // Photos aur Videos dono ka URI query
         val uri = MediaStore.Files.getContentUri("external")
         val cursor = context.contentResolver.query(
             uri, projection, null, null, null
         )
 
         cursor?.use { c ->
-            val idColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val pathColumn = c.getColumnIndexOrThrow(MediaStore.MediaStoreColumns.DATA)
+            val pathColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
             val mimeColumn = c.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
 
             while (c.moveToNext()) {
@@ -41,10 +39,11 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
                     val videoUri = Uri.parse(path)
                     VideoScannerHelper.scanAndMoveToTrashIfSensitive(context, mediaItem, videoUri)
                 } else if (mimeType.startsWith("image/")) {
-                    // Photos scan check
                     val isSensitivePhoto = scanPhotoForSafety(path)
                     if (isSensitivePhoto) {
-                        TrashStorage.binList.add(mediaItem)
+                        if (!TrashStorage.binList.contains(mediaItem)) {
+                            TrashStorage.binList.add(mediaItem)
+                        }
                     }
                 }
             }
@@ -52,7 +51,6 @@ class BackgroundScanWorker(context: Context, params: WorkerParameters) : Worker(
     }
 
     private fun scanPhotoForSafety(filePath: String): Boolean {
-        // Photo safety check logic
         return false
     }
 }
