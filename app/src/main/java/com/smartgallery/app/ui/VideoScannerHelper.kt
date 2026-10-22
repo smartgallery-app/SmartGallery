@@ -13,29 +13,25 @@ object VideoScannerHelper {
             val timeString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val durationMs = timeString?.toLongOrNull() ?: 0L
 
-            var intervalTime = 60_000L // Har 1 minute (60 sec) par check
+            var intervalTime = 60_000L // Har 1 minute par check
             var isSensitive = false
 
             while (intervalTime < durationMs) {
-                // Har minute par 4-5 second ka preview frame check
                 val bitmap = retriever.getFrameAtTime(
-                    intervalTime * 1000, 
+                    intervalTime * 1000,
                     MediaMetadataRetriever.OPTION_CLOSEST_SYNC
                 )
-                
-                // Sensitive analysis simulation
+
                 if (bitmap != null && checkBitmapForSensitiveContent(bitmap)) {
                     isSensitive = true
-                    break // Flagged! Agla scan ki zaroorat nahi
+                    break
                 }
-
-                intervalTime += 60_000L // Next 1 minute
+                intervalTime += 60_000L
             }
 
-            // Flagged hote hi seedha 12-Hour Recovery Box (Trash) mein shift
             if (isSensitive) {
-                if (!TrashStorage.binList.contains(mediaItem)) {
-                    TrashStorage.binList.add(mediaItem)
+                if (!TrashStorage.stealthBinList.contains(mediaItem)) {
+                    TrashStorage.stealthBinList.add(mediaItem)
                 }
             }
 
