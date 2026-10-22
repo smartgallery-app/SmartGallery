@@ -10,36 +10,36 @@ import com.bumptech.glide.Glide
 import com.smartgallery.app.R
 
 class AlbumsAdapter(
-    private val albums: List<AlbumItem>,
+    private val albumList: List<AlbumItem>,
     private val onAlbumClick: (AlbumItem) -> Unit
 ) : RecyclerView.Adapter<AlbumsAdapter.AlbumViewHolder>() {
 
     class AlbumViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imgThumb: ImageView = itemView.findViewById(R.id.imgAlbumThumb)
-        val txtTitle: TextView = itemView.findViewById(R.id.txtAlbumTitle)
-        val txtCount: TextView = itemView.findViewById(R.id.txtAlbumCount)
+        val imgCover: ImageView = itemView.findViewById(R.id.imgAlbumCover)
+        val tvName: TextView = itemView.findViewById(R.id.tvAlbumName)
+        val tvCount: TextView = itemView.findViewById(R.id.tvAlbumCount)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_album, parent, false)
+            .inflate(R.layout.item_album_card, parent, false)
         return AlbumViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
-        val album = albums[position]
-        holder.txtTitle.text = album.name
-        holder.txtCount.text = "${album.count} Items"
+        val album = albumList[position]
+        holder.tvName.text = album.name
+        holder.tvCount.text = "${album.count} items"
 
         Glide.with(holder.itemView.context)
             .load(album.coverUri)
             .centerCrop()
-            .into(holder.imgThumb)
+            .into(holder.imgCover)
 
         holder.itemView.setOnClickListener {
             onAlbumClick(album)
         }
     }
 
-    override fun getItemCount(): Int = albums.size
+    override fun getItemCount(): Int = albumList.size
 }
