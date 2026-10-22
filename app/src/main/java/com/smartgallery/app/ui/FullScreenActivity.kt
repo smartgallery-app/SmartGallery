@@ -1,30 +1,52 @@
 package com.smartgallery.app.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.ImageButton
-import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
+import androidx.viewpager2.widget.ViewPager2
 import com.smartgallery.app.R
 
 class FullScreenActivity : AppCompatActivity() {
 
+    private lateinit var viewPager: ViewPager2
+    private val mediaList = mutableListOf<MediaItem>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_full_screen_view)
+        setContentView(R.layout.activity_full_screen_pager)
 
-        val imgFullScreen = findViewById<ImageView>(R.id.imgFullScreen)
-        val btnBack = findViewById<ImageButton>(R.id.btnBack)
+        val btnBack = findViewById<ImageButton>(R.id.btnBackFull)
+        val btnShare = findViewById<LinearLayout>(R.id.btnShareSingle)
+        val btnDelete = findViewById<LinearLayout>(R.id.btnDeleteSingle)
+        viewPager = findViewById(R.id.viewPagerMedia)
 
-        val mediaUri = intent.getStringExtra("media_uri")
-
-        if (mediaUri != null) {
-            Glide.with(this)
-                .load(mediaUri)
-                .into(imgFullScreen)
+        val mediaUri = intent.getStringExtra("media_uri") ?: ""
+        if (mediaUri.isNotEmpty()) {
+            mediaList.add(MediaItem(0, mediaUri, 0, ""))
         }
 
-        btnBack?.setOnClickListener {
+        val adapter = FullScreenPagerAdapter(mediaList)
+        viewPager.adapter = adapter
+
+        btnBack?.setOnClickListener { finish() }
+
+        btnShare?.setOnClickListener {
+            val currentPos = viewPager.currentItem
+            if (mediaList.isNotEmpty()) {
+                val item = mediaList[currentPos]
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, Uri.parse(item.uri))
+                }
+                startActivity(Intent.createChooser(shareIntent, "Share Image"))
+            }
+        }
+
+        btnDelete?.setOnClickListener {
+            // Move to 30-Day Main Trash logic
             finish()
         }
     }
