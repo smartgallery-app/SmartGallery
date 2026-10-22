@@ -3,11 +3,11 @@ package com.smartgallery.app.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.ImageButton
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -25,8 +25,6 @@ class MainActivity : AppCompatActivity() {
     private val albumList = mutableListOf<AlbumItem>()
     private val STORAGE_PERMISSION_CODE = 100
 
-    private var isPhotosTab = true
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -34,8 +32,8 @@ class MainActivity : AppCompatActivity() {
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewMain)
         val tabPhotos = findViewById<TextView>(R.id.tabPhotos)
         val tabAlbums = findViewById<TextView>(R.id.tabAlbums)
-        val btnNavTrash = findViewById<LinearLayout>(R.id.btnNavTrash)
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
+        val tvMainTitle = findViewById<TextView>(R.id.tvMainTitle)
 
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
@@ -46,29 +44,29 @@ class MainActivity : AppCompatActivity() {
         }
 
         albumsAdapter = AlbumsAdapter(albumList) { album ->
-            // Album click handler
+            // Album click
         }
 
         recyclerView?.adapter = mainAdapter
 
         tabPhotos?.setOnClickListener {
-            isPhotosTab = true
-            tabPhotos.setTextColor(ContextCompat.getColor(this, android.R.color.white))
-            tabAlbums?.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
+            tvMainTitle?.text = "Photos"
+            tabPhotos.setBackgroundColor(Color.parseColor("#3A3A3C"))
+            tabPhotos.setTextColor(Color.WHITE)
+            tabAlbums?.setBackgroundColor(Color.TRANSPARENT)
+            tabAlbums?.setTextColor(Color.parseColor("#8E8E93"))
             recyclerView?.layoutManager = GridLayoutManager(this, 3)
             recyclerView?.adapter = mainAdapter
         }
 
         tabAlbums?.setOnClickListener {
-            isPhotosTab = false
-            tabAlbums.setTextColor(ContextCompat.getColor(this, android.R.color.white))
-            tabPhotos?.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
+            tvMainTitle?.text = "Albums"
+            tabAlbums.setBackgroundColor(Color.parseColor("#3A3A3C"))
+            tabAlbums.setTextColor(Color.WHITE)
+            tabPhotos?.setBackgroundColor(Color.TRANSPARENT)
+            tabPhotos?.setTextColor(Color.parseColor("#8E8E93"))
             recyclerView?.layoutManager = GridLayoutManager(this, 2)
             recyclerView?.adapter = albumsAdapter
-        }
-
-        btnNavTrash?.setOnClickListener {
-            startActivity(Intent(this, TrashActivity::class.java))
         }
 
         btnSettings?.setOnClickListener {
