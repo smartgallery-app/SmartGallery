@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         albumsAdapter = AlbumsAdapter(albumList) { album ->
-            // Album click handling
+            // Album click handler
         }
 
         recyclerView.adapter = mainAdapter
