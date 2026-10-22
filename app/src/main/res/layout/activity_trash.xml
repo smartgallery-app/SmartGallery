@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Top Navigation Header -->
+    <!-- Clean Realme UI Header -->
     <RelativeLayout
         android:id="@+id/topBarTrash"
         android:layout_width="match_parent"
@@ -30,8 +30,7 @@
             android:layout_marginStart="16dp"
             android:text="Recently deleted"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="normal" />
+            android:textSize="20sp" />
 
         <ImageButton
             android:id="@+id/btnTrashMenu"
@@ -44,37 +43,11 @@
             app:tint="#FFFFFF" />
     </RelativeLayout>
 
-    <!-- Empty Trash State View (When no files exist) -->
-    <LinearLayout
-        android:id="@+id/layoutEmptyState"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <ImageView
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:src="@android:drawable/ic_menu_gallery"
-            app:tint="#4A4A4A" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="No photos or videos"
-            android:textColor="#8E8E93"
-            android:textSize="16sp" />
-    </LinearLayout>
-
-    <!-- Main Trash Grid -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewTrash"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/topBarTrash"
-        android:padding="4dp"
-        android:visibility="gone" />
+        android:padding="2dp" />
 
 </RelativeLayout>
