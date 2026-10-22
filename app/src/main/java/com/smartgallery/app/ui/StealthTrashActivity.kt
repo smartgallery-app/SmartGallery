@@ -13,13 +13,17 @@ class StealthTrashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_stealth_trash)
 
-        val btnBack = findViewById<ImageButton>(R.id.btnStealthBack)
+        // Safe ID check for Back button
+        val btnBack = findViewById<ImageButton>(R.id.btnStealthBack) 
+            ?: findViewById<ImageButton>(R.id.btnTrashBack)
+
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewStealth)
+            ?: findViewById<RecyclerView>(R.id.recyclerViewTrash)
 
         btnBack?.setOnClickListener { finish() }
 
         val adapter = TrashAdapter(TrashStorage.stealthBinList, isStealthBox = true) { item: TrashItem ->
-            // Stealth Item click action
+            // Click action
         }
 
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
