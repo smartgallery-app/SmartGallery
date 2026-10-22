@@ -7,10 +7,13 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
 import android.widget.ImageButton
+import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -35,6 +38,11 @@ class MainActivity : AppCompatActivity() {
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         val tvMainTitle = findViewById<TextView>(R.id.tvMainTitle)
 
+        // 30-Day Recently Deleted Trash Button (In Albums Section)
+        val btnNavTrash = findViewById<RelativeLayout>(R.id.btnNavTrash)
+        val tvMoreHeader = findViewById<TextView>(R.id.tvMoreHeader)
+        val cardMoreSection = findViewById<CardView>(R.id.cardMoreSection)
+
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
         mainAdapter = MainAdapter(mediaList) { item ->
@@ -49,28 +57,46 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView?.adapter = mainAdapter
 
+        // Photos Tab Click
         tabPhotos?.setOnClickListener {
             tvMainTitle?.text = "Photos"
             tabPhotos.setBackgroundColor(Color.parseColor("#3A3A3C"))
             tabPhotos.setTextColor(Color.WHITE)
             tabAlbums?.setBackgroundColor(Color.TRANSPARENT)
             tabAlbums?.setTextColor(Color.parseColor("#8E8E93"))
+            
+            // Photos tab me "More" section hide rakhein
+            tvMoreHeader?.visibility = View.GONE
+            cardMoreSection?.visibility = View.GONE
+
             recyclerView?.layoutManager = GridLayoutManager(this, 3)
             recyclerView?.adapter = mainAdapter
         }
 
+        // Albums Tab Click
         tabAlbums?.setOnClickListener {
             tvMainTitle?.text = "Albums"
             tabAlbums.setBackgroundColor(Color.parseColor("#3A3A3C"))
             tabAlbums.setTextColor(Color.WHITE)
             tabPhotos?.setBackgroundColor(Color.TRANSPARENT)
             tabPhotos?.setTextColor(Color.parseColor("#8E8E93"))
+            
+            // Albums tab me "More" section (Recently Deleted) show karein
+            tvMoreHeader?.visibility = View.VISIBLE
+            cardMoreSection?.visibility = View.VISIBLE
+
             recyclerView?.layoutManager = GridLayoutManager(this, 2)
             recyclerView?.adapter = albumsAdapter
         }
 
+        // Settings Button Click
         btnSettings?.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        // 30-Day Recently Deleted Click Action
+        btnNavTrash?.setOnClickListener {
+            startActivity(Intent(this, TrashActivity::class.java))
         }
 
         checkAndRequestPermissions()
