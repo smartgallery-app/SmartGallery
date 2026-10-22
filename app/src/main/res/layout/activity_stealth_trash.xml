@@ -1,51 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#121212">
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="#1F1F1F"
-        android:paddingHorizontal="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:text="12-Hour Stealth Recovery Box"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnClearStealth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:backgroundTint="#FF5252"
-            android:text="Clear All"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp" />
-    </RelativeLayout>
+    android:background="#050505">
 
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/tvStealthTitle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#2C2C2C"
-        android:padding="12dp"
-        android:text="Stealth items are automatically removed permanently after 12 hours."
-        android:textColor="#FFB74D"
-        android:textSize="12sp"
-        android:gravity="center" />
+        android:text="12-Hour Stealth Trash"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_margin="16dp" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewStealthTrash"
+        android:id="@+id/recyclerViewStealth"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:layout_below="@id/tvStealthTitle"
+        android:padding="4dp" />
 
-</LinearLayout>
+</RelativeLayout>
