@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Top Header -->
+    <!-- Top Bar -->
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
@@ -17,7 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:text="Photos"
+            android:text="Albums"
             android:textColor="#FFFFFF"
             android:textSize="26sp"
             android:textStyle="bold" />
@@ -48,16 +48,94 @@
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Main Content Recycler -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewMain"
+    <!-- Scrollable Content View -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/floatingPillNav"
-        android:layout_below="@id/topBar"
-        android:padding="8dp" />
+        android:layout_below="@id/topBar">
 
-    <!-- Realme UI Floating Pill Bottom Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Main Media / Albums Grid -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewMain"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+            <!-- Realme UI "More" Section -->
+            <TextView
+                android:id="@+id/tvMoreHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="More"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="12dp"
+                android:layout_marginStart="8dp" />
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardMoreSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="#1C1C1E"
+                app:cardCornerRadius="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp">
+
+                    <!-- 30-Day Main Trash Option -->
+                    <RelativeLayout
+                        android:id="@+id/btnNavTrash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="16dp"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:id="@+id/icTrash"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/ic_menu_delete"
+                            app:tint="#8E8E93" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_toEndOf="@id/icTrash"
+                            android:layout_centerVertical="true"
+                            android:layout_marginStart="16dp"
+                            android:text="Recently deleted"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:src="@android:drawable/ic_menu_forward"
+                            app:tint="#8E8E93" />
+                    </RelativeLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Floating Pill Navigation -->
     <LinearLayout
         android:id="@+id/floatingPillNav"
         android:layout_width="wrap_content"
@@ -87,11 +165,10 @@
                     android:id="@+id/tabPhotos"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp"
-                    android:background="#3A3A3C"
                     android:gravity="center"
                     android:paddingHorizontal="20dp"
                     android:text="Photos"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#8E8E93"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -99,16 +176,16 @@
                     android:id="@+id/tabAlbums"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp"
+                    android:background="#3A3A3C"
                     android:gravity="center"
                     android:paddingHorizontal="20dp"
                     android:text="Albums"
-                    android:textColor="#8E8E93"
+                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Plus Action Button -->
         <androidx.cardview.widget.CardView
             android:id="@+id/btnNavPlus"
             android:layout_width="54dp"
