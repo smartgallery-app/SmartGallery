@@ -1,60 +1,40 @@
 package com.smartgallery.app.ui
 
-import android.os.Bundle
-import android.widget.Button
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.smartgallery.app.R
 
-class TrashActivity : AppCompatActivity() {
+class TrashAdapter(
+    private val items: List<MediaItem>,
+    private val onItemClick: (MediaItem) -> Unit
+) : RecyclerView.Adapter<TrashAdapter.TrashViewHolder>() {
 
-    private lateinit var adapter: TrashAdapter
-    private val mainTrashList = mutableListOf<MediaItem>()
+    class TrashViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val imageView: ImageView = itemView.findViewById(R.id.imgMediaThumb)
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_trash)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrashViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_media, parent, false)
+        return TrashViewHolder(view)
+    }
 
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewTrash)
-        val btnClearAll = findViewById<Button>(R.id.btnClearAll)
+    override fun onBindViewHolder(holder: TrashViewHolder, position: Int) {
+        val item = items[position]
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        Glide.with(holder.itemView.context)
+            .load(item.uri)
+            .centerCrop()
+            .into(holder.imageView)
 
-        // 30-Day Limit Logic (30 * 24 * 60 * 60 * 1000L)
-        val thirtyDaysInMillis = 30L * 24 * 60 * 60 * 1000L
-        val currentTime = System.currentTimeMillis()
-
-        TrashStorage.mainBinList.removeAll { item ->
-            (currentTime - item.dateAdded * 1000L) > thirtyDaysInMillis
-        }
-
-        mainTrashList.addAll(TrashStorage.mainBinList)
-
-        adapter = TrashAdapter(
-            mainTrashList,
-            onRestoreClick = { item ->
-                TrashStorage.mainBinList.remove(item)
-                mainTrashList.remove(item)
-                adapter.notifyDataSetChanged()
-                Toast.makeText(this, "File Restored to Gallery", Toast.LENGTH_SHORT).show()
-            },
-            onDeleteClick = { item ->
-                TrashStorage.mainBinList.remove(item)
-                mainTrashList.remove(item)
-                adapter.notifyDataSetChanged()
-                Toast.makeText(this, "File Permanently Deleted", Toast.LENGTH_SHORT).show()
-            }
-        )
-
-        recyclerView.adapter = adapter
-
-        btnClearAll.setOnClickListener {
-            TrashStorage.mainBinList.clear()
-            mainTrashList.clear()
-            adapter.notifyDataSetChanged()
-            Toast.makeText(this, "Trash Cleared!", Toast.LENGTH_SHORT).show()
+        holder.itemView.setOnClickListener {
+            onItemClick(item)
         }
     }
+
+    override fun getItemCount(): Int = items.size
 }
