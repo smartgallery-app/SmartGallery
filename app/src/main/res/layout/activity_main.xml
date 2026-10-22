@@ -3,67 +3,127 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="#050505">
 
-    <!-- Top Toolbar -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:layout_alignParentTop="true"
-        android:background="#1A1A1A"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <!-- Multi-Select Action Bar (Hidden by default) -->
     <LinearLayout
-        android:id="@+id/selectionActionBar"
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_above="@id/bottomNavigation"
-        android:background="#222222"
-        android:gravity="center"
         android:orientation="horizontal"
-        android:visibility="gone"
-        android:elevation="8dp">
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="#050505">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMultiShare"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Share"
-            android:textColor="#FFFFFF" />
+            android:text="Photos"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMultiDelete"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Delete"
-            android:textColor="#FF5252" />
-
+        <ImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_preferences"
+            app:tint="#CCCCCC"
+            android:contentDescription="Settings" />
     </LinearLayout>
 
-    <!-- Bottom Navigation Bar (Fixed at Bottom) -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
+    <LinearLayout
+        android:id="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_alignParentBottom="true"
-        android:background="#1A1A1A"
-        app:itemIconTint="#FFFFFF"
-        app:itemTextColor="#FFFFFF"
-        app:menu="@menu/bottom_nav_menu" />
+        android:layout_height="40dp"
+        android:layout_below="@id/headerLayout"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical">
 
-    <!-- RecyclerView for Media & Albums -->
+        <TextView
+            android:id="@+id/tabPhotos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Photos"
+            android:textColor="#3D82F6"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingEnd="20dp" />
+
+        <TextView
+            android:id="@+id/tabAlbums"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Albums"
+            android:textColor="#777777"
+            android:textSize="16sp"
+            android:paddingEnd="20dp" />
+    </LinearLayout>
+
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+        android:id="@+id/recyclerViewMain"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/toolbar"
-        android:layout_above="@id/selectionActionBar"
+        android:layout_below="@id/tabLayout"
+        android:layout_above="@id/bottomBar"
+        android:padding="2dp"
         android:clipToPadding="false" />
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="#121212"
+        android:elevation="6dp">
+
+        <LinearLayout
+            android:id="@+id/btnNavPhotos"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@android:drawable/ic_menu_gallery"
+                app:tint="#3D82F6" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Photos"
+                android:textColor="#3D82F6"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btnNavTrash"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="#777777" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trash"
+                android:textColor="#777777"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+    </LinearLayout>
 
 </RelativeLayout>
