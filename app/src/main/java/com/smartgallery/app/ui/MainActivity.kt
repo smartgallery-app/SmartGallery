@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         val btnNavTrash = findViewById<LinearLayout>(R.id.btnNavTrash)
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
 
-        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
         mainAdapter = MainAdapter(mediaList) { item ->
             val intent = Intent(this, FullScreenActivity::class.java)
@@ -49,22 +49,22 @@ class MainActivity : AppCompatActivity() {
             // Album click handler
         }
 
-        recyclerView.adapter = mainAdapter
+        recyclerView?.adapter = mainAdapter
 
         tabPhotos?.setOnClickListener {
             isPhotosTab = true
             tabPhotos.setTextColor(ContextCompat.getColor(this, android.R.color.white))
             tabAlbums?.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
-            recyclerView.layoutManager = GridLayoutManager(this, 3)
-            recyclerView.adapter = mainAdapter
+            recyclerView?.layoutManager = GridLayoutManager(this, 3)
+            recyclerView?.adapter = mainAdapter
         }
 
         tabAlbums?.setOnClickListener {
             isPhotosTab = false
             tabAlbums.setTextColor(ContextCompat.getColor(this, android.R.color.white))
             tabPhotos?.setTextColor(ContextCompat.getColor(this, android.R.color.darker_gray))
-            recyclerView.layoutManager = GridLayoutManager(this, 2)
-            recyclerView.adapter = albumsAdapter
+            recyclerView?.layoutManager = GridLayoutManager(this, 2)
+            recyclerView?.adapter = albumsAdapter
         }
 
         btnNavTrash?.setOnClickListener {
@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
 
-        if (ContextCompat.hasPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
             loadMediaFiles()
         } else {
             ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
