@@ -99,7 +99,7 @@
                         android:layout_height="16dp"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:src="@android:drawable/ic_menu_forward"
+                        android:src="@android:drawable/ic_media_play"
                         app:tint="#8E8E93" />
                 </RelativeLayout>
 
