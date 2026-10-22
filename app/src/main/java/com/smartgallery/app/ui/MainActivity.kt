@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -38,7 +39,6 @@ class MainActivity : AppCompatActivity() {
         val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
         val tvMainTitle = findViewById<TextView>(R.id.tvMainTitle)
 
-        // 30-Day Recently Deleted Trash Button (In Albums Section)
         val btnNavTrash = findViewById<RelativeLayout>(R.id.btnNavTrash)
         val tvMoreHeader = findViewById<TextView>(R.id.tvMoreHeader)
         val cardMoreSection = findViewById<CardView>(R.id.cardMoreSection)
@@ -57,7 +57,6 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView?.adapter = mainAdapter
 
-        // Photos Tab Click
         tabPhotos?.setOnClickListener {
             tvMainTitle?.text = "Photos"
             tabPhotos.setBackgroundColor(Color.parseColor("#3A3A3C"))
@@ -65,7 +64,6 @@ class MainActivity : AppCompatActivity() {
             tabAlbums?.setBackgroundColor(Color.TRANSPARENT)
             tabAlbums?.setTextColor(Color.parseColor("#8E8E93"))
             
-            // Photos tab me "More" section hide rakhein
             tvMoreHeader?.visibility = View.GONE
             cardMoreSection?.visibility = View.GONE
 
@@ -73,7 +71,6 @@ class MainActivity : AppCompatActivity() {
             recyclerView?.adapter = mainAdapter
         }
 
-        // Albums Tab Click
         tabAlbums?.setOnClickListener {
             tvMainTitle?.text = "Albums"
             tabAlbums.setBackgroundColor(Color.parseColor("#3A3A3C"))
@@ -81,7 +78,6 @@ class MainActivity : AppCompatActivity() {
             tabPhotos?.setBackgroundColor(Color.TRANSPARENT)
             tabPhotos?.setTextColor(Color.parseColor("#8E8E93"))
             
-            // Albums tab me "More" section (Recently Deleted) show karein
             tvMoreHeader?.visibility = View.VISIBLE
             cardMoreSection?.visibility = View.VISIBLE
 
@@ -89,12 +85,10 @@ class MainActivity : AppCompatActivity() {
             recyclerView?.adapter = albumsAdapter
         }
 
-        // Settings Button Click
         btnSettings?.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        // 30-Day Recently Deleted Click Action
         btnNavTrash?.setOnClickListener {
             startActivity(Intent(this, TrashActivity::class.java))
         }
@@ -103,16 +97,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_MEDIA_VIDEO)
+            }
         } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
         }
 
-        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-            loadMediaFiles()
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), STORAGE_PERMISSION_CODE)
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(permission), STORAGE_PERMISSION_CODE)
+            loadMediaFiles()
         }
     }
 
@@ -121,15 +124,31 @@ class MainActivity : AppCompatActivity() {
         albumList.clear()
         val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
 
+        // Querying Internal and External Filesystem Store
         val uri = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DATA,
             MediaStore.MediaColumns.DATE_ADDED,
-            MediaStore.MediaColumns.BUCKET_DISPLAY_NAME
+            MediaStore.MediaColumns.BUCKET_DISPLAY_NAME,
+            MediaStore.MediaColumns.MEDIA_TYPE
         )
 
-        val cursor = contentResolver.query(uri, projection, null, null, MediaStore.MediaColumns.DATE_ADDED + " DESC")
+        // Query Photos & Videos
+        val selection = "${MediaStore.MediaColumns.MEDIA_TYPE}=? OR ${MediaStore.MediaColumns.MEDIA_TYPE}=?"
+        val selectionArgs = arrayOf(
+            MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
+            MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
+        )
+
+        val cursor = contentResolver.query(
+            uri,
+            projection,
+            selection,
+            selectionArgs,
+            "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+        )
+
         cursor?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
             val dataCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
@@ -140,9 +159,10 @@ class MainActivity : AppCompatActivity() {
                 val id = c.getLong(idCol)
                 val path = c.getString(dataCol) ?: ""
                 val dateAdded = c.getLong(dateCol)
-                val bucket = c.getString(bucketCol) ?: "Gallery"
+                val bucket = c.getString(bucketCol) ?: "Camera"
 
-                val item = MediaItem(id, path, dateAdded, bucket)
+                val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
+                val item = MediaItem(id, contentUri, dateAdded, bucket)
                 mediaList.add(item)
 
                 if (!albumMap.containsKey(bucket)) {
@@ -164,10 +184,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == STORAGE_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMediaFiles()
         } else {
-            Toast.makeText(this, "Storage permission required!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "All media permissions required to show gallery items!", Toast.LENGTH_SHORT).show()
         }
     }
 }
