@@ -1,27 +1,23 @@
 package com.smartgallery.app.ui
 
 import android.content.Context
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class BackgroundScanWorker(
     context: Context,
     workerParams: WorkerParameters
-) : Worker(context, workerParams) {
+) : CoroutineWorker(context, workerParams) {
 
-    override fun doWork(): Result {
-        val currentTime = System.currentTimeMillis()
-        
-        // Clean 12-hour stealth bin items
-        TrashStorage.stealthBinList.removeAll { item ->
-            (currentTime - item.dateAdded) > (12 * 60 * 60 * 1000)
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        return@withContext try {
+            AIScannerHelper.scanAndFilterMedia(applicationContext)
+            Result.success()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.retry()
         }
-
-        // Clean 30-day main trash items
-        TrashStorage.mainBinList.removeAll { item ->
-            (currentTime - item.dateAdded) > (30L * 24 * 60 * 60 * 1000)
-        }
-
-        return Result.success()
     }
 }
