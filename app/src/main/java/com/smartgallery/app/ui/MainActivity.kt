@@ -46,14 +46,12 @@ class MainActivity : AppCompatActivity() {
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
         mainAdapter = MainAdapter(mediaList) { item ->
-            val intent = Intent(this, FullScreenActivity::class.java)
+            val intent = Intent(this, FullScreenViewActivity::class.java)
             intent.putExtra("media_uri", item.uri)
             startActivity(intent)
         }
 
-        albumsAdapter = AlbumsAdapter(albumList) { album ->
-            // Album click action
-        }
+        albumsAdapter = AlbumsAdapter(albumList) { album -> }
 
         recyclerView?.adapter = mainAdapter
 
@@ -93,6 +91,14 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, TrashActivity::class.java))
         }
 
+        // Start 24/7 AI Scanner Service
+        val serviceIntent = Intent(this, BackgroundScanService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+
         checkAndRequestPermissions()
     }
 
@@ -124,7 +130,6 @@ class MainActivity : AppCompatActivity() {
         albumList.clear()
         val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
 
-        // Querying Internal and External Media Store
         val uri = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
@@ -184,7 +189,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == STORAGE_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMediaFiles()
         } else {
-            Toast.makeText(this, "Permission granted! Loading gallery...", Toast.LENGTH_SHORT).show()
             loadMediaFiles()
         }
     }
