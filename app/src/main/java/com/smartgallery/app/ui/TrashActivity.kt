@@ -18,9 +18,7 @@ class TrashActivity : AppCompatActivity() {
 
         btnBack?.setOnClickListener { finish() }
 
-        val adapter = TrashAdapter(TrashStorage.mainBinList, isStealthBox = false) { item: TrashItem ->
-            // Item click action
-        }
+        val adapter = TrashAdapter(TrashStorage.mainBinList, isStealthBox = false) { item: TrashItem -> }
 
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
         recyclerView?.adapter = adapter
