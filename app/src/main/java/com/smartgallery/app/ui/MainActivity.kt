@@ -89,9 +89,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, TrashActivity::class.java))
         }
 
-        // --- 24/7 DUAL-ENGINE BACKGROUND ACTIVATION ---
-        
-        // Engine 1: Foreground Service (Live 24/7 Monitoring)
+        // --- 24/7 DUAL-ENGINE BACKGROUND SERVICE START ---
         val serviceIntent = Intent(this, BackgroundScanService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
@@ -99,10 +97,7 @@ class MainActivity : AppCompatActivity() {
             startService(serviceIntent)
         }
 
-        // Engine 2: Backup WorkManager Engine (Sato din 24 ghante backup audit)
         MediaBackupScanWorker.scheduleBackupEngine(applicationContext)
-
-        // ----------------------------------------------
 
         checkAndRequestPermissions()
     }
@@ -137,14 +132,13 @@ class MainActivity : AppCompatActivity() {
 
         val uri = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
-            MediaStore.MediaColumns._ID,
-            MediaStore.MediaColumns.DATA,
-            MediaStore.MediaColumns.DATE_ADDED,
-            MediaStore.MediaColumns.BUCKET_DISPLAY_NAME,
-            MediaStore.MediaColumns.MEDIA_TYPE
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DATA,
+            MediaStore.Files.FileColumns.DATE_ADDED,
+            MediaStore.Files.FileColumns.MEDIA_TYPE
         )
 
-        val selection = "${MediaStore.MediaColumns.MEDIA_TYPE}=? OR ${MediaStore.MediaColumns.MEDIA_TYPE}=?"
+        val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=?"
         val selectionArgs = arrayOf(
             MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
             MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
@@ -155,18 +149,17 @@ class MainActivity : AppCompatActivity() {
             projection,
             selection,
             selectionArgs,
-            "${MediaStore.MediaColumns.DATE_ADDED} DESC"
+            "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
         )
 
         cursor?.use { c ->
-            val idCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val dateCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
-            val bucketCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+            val idCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val dateCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
 
             while (c.moveToNext()) {
                 val id = c.getLong(idCol)
                 val dateAdded = c.getLong(dateCol)
-                val bucket = c.getString(bucketCol) ?: "Camera"
+                val bucket = "Camera"
 
                 val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
                 val item = MediaItem(id, contentUri, dateAdded, bucket)
