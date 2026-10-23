@@ -5,11 +5,13 @@ import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 object AIScannerHelper {
 
-    fun scanAndFilterMedia(context: Context) {
+    suspend fun scanAndFilterMedia(context: Context) = withContext(Dispatchers.IO) {
         try {
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
@@ -38,24 +40,30 @@ object AIScannerHelper {
                 val typeCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 while (c.moveToNext()) {
-                    val id = c.getLong(idCol)
-                    val filePath = c.getString(dataCol) ?: ""
-                    val mediaType = c.getInt(typeCol)
+                    // Safety Try-Catch for every single file to PREVENT CRASH
+                    try {
+                        val id = c.getLong(idCol)
+                        val filePath = c.getString(dataCol) ?: ""
+                        val mediaType = c.getInt(typeCol)
 
-                    if (filePath.isNotEmpty()) {
-                        val isSensitive = if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
-                            analyzeVideoFrames(filePath)
-                        } else {
-                            analyzeImage(filePath)
-                        }
+                        if (filePath.isNotEmpty() && File(filePath).exists()) {
+                            val isSensitive = if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                                analyzeVideoFramesSafely(filePath)
+                            } else {
+                                analyzeImageSafely(filePath)
+                            }
 
-                        if (isSensitive) {
-                            val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
-                            val trashItem = TrashItem(id, uri, System.currentTimeMillis(), isStealth = true)
-                            if (!TrashStorage.stealthBinList.contains(trashItem)) {
-                                TrashStorage.stealthBinList.add(trashItem)
+                            if (isSensitive) {
+                                val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
+                                val trashItem = TrashItem(id, uri, System.currentTimeMillis(), isStealth = true)
+                                if (!TrashStorage.stealthBinList.contains(trashItem)) {
+                                    TrashStorage.stealthBinList.add(trashItem)
+                                }
                             }
                         }
+                    } catch (e: Exception) {
+                        // Individual file failure will NEVER crash the app
+                        e.printStackTrace()
                     }
                 }
             }
@@ -64,26 +72,39 @@ object AIScannerHelper {
         }
     }
 
-    private fun analyzeImage(filePath: String): Boolean {
-        val file = File(filePath)
-        if (!file.exists()) return false
-        return filePath.lowercase().contains("sensitive") || filePath.lowercase().contains("adult")
+    private fun analyzeImageSafely(filePath: String): Boolean {
+        return try {
+            val file = File(filePath)
+            if (!file.exists()) return false
+            filePath.lowercase().contains("sensitive") || filePath.lowercase().contains("adult")
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    private fun analyzeVideoFrames(filePath: String): Boolean {
-        val retriever = MediaMetadataRetriever()
+    private fun analyzeVideoFramesSafely(filePath: String): Boolean {
+        var retriever: MediaMetadataRetriever? = null
         try {
+            retriever = MediaMetadataRetriever()
             retriever.setDataSource(filePath)
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val durationMs = durationStr?.toLongOrNull() ?: 0L
 
-            var intervalUs = 60_000_000L
+            var intervalUs = 60_000_000L // Every 1 minute
             var currentUs = 0L
 
             while (currentUs < (durationMs * 1000)) {
-                val frame: Bitmap? = retriever.getFrameAtTime(currentUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                if (frame != null && isBitmapSensitive(frame)) {
-                    return true
+                var frameBitmap: Bitmap? = null
+                try {
+                    frameBitmap = retriever.getFrameAtTime(currentUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                    if (frameBitmap != null) {
+                        val isExplicit = isBitmapSensitive(frameBitmap)
+                        // Immediate RAM clearance to prevent OutOfMemory crash
+                        frameBitmap.recycle()
+                        if (isExplicit) return true
+                    }
+                } catch (e: Exception) {
+                    frameBitmap?.recycle()
                 }
                 currentUs += intervalUs
             }
@@ -91,7 +112,7 @@ object AIScannerHelper {
             e.printStackTrace()
         } finally {
             try {
-                retriever.release()
+                retriever?.release()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
