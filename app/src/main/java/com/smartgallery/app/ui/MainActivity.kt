@@ -12,7 +12,6 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.RelativeLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
@@ -52,7 +51,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         albumsAdapter = AlbumsAdapter(albumList) { album -> }
-
         recyclerView?.adapter = mainAdapter
 
         tabPhotos?.setOnClickListener {
@@ -91,13 +89,20 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, TrashActivity::class.java))
         }
 
-        // Start 24/7 AI Scanner Service
+        // --- 24/7 DUAL-ENGINE BACKGROUND ACTIVATION ---
+        
+        // Engine 1: Foreground Service (Live 24/7 Monitoring)
         val serviceIntent = Intent(this, BackgroundScanService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
+
+        // Engine 2: Backup WorkManager Engine (Sato din 24 ghante backup audit)
+        MediaBackupScanWorker.scheduleBackupEngine(applicationContext)
+
+        // ----------------------------------------------
 
         checkAndRequestPermissions()
     }
