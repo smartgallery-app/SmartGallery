@@ -13,6 +13,19 @@ object AIScannerHelper {
 
     suspend fun scanAndFilterMedia(context: Context) = withContext(Dispatchers.IO) {
         try {
+            // 1. Scan standard MediaStore (Camera, WhatsApp, Downloads, etc.)
+            scanMediaStore(context)
+
+            // 2. Deep Storage Folder Sweep (Hidden folders, Vault paths, Internal files)
+            scanDeepInternalStorage()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun scanMediaStore(context: Context) {
+        try {
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
                 MediaStore.Files.FileColumns.DATA,
@@ -40,7 +53,6 @@ object AIScannerHelper {
                 val typeCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 while (c.moveToNext()) {
-                    // Safety Try-Catch for every single file to PREVENT CRASH
                     try {
                         val id = c.getLong(idCol)
                         val filePath = c.getString(dataCol) ?: ""
@@ -62,9 +74,47 @@ object AIScannerHelper {
                             }
                         }
                     } catch (e: Exception) {
-                        // Individual file failure will NEVER crash the app
                         e.printStackTrace()
                     }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun scanDeepInternalStorage() {
+        try {
+            val rootDir = File("/storage/emulated/0/")
+            if (rootDir.exists() && rootDir.isDirectory) {
+                walkAndScanDirectory(rootDir)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun walkAndScanDirectory(dir: File) {
+        try {
+            val files = dir.listFiles() ?: return
+            for (file in files) {
+                try {
+                    if (file.isDirectory) {
+                        // Recursively check all subfolders and hidden folders
+                        walkAndScanDirectory(file)
+                    } else {
+                        val path = file.absolutePath.lowercase()
+                        if (path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png") || path.endsWith(".mp4") || path.endsWith(".mkv")) {
+                            if (path.contains("sensitive") || path.contains("adult") || path.contains("hidden")) {
+                                val trashItem = TrashItem(file.lastModified(), file.absolutePath, System.currentTimeMillis(), isStealth = true)
+                                if (!TrashStorage.stealthBinList.contains(trashItem)) {
+                                    TrashStorage.stealthBinList.add(trashItem)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Skip unreadable files safely to prevent crash
                 }
             }
         } catch (e: Exception) {
@@ -90,7 +140,7 @@ object AIScannerHelper {
             val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
             val durationMs = durationStr?.toLongOrNull() ?: 0L
 
-            var intervalUs = 60_000_000L // Every 1 minute
+            var intervalUs = 60_000_000L
             var currentUs = 0L
 
             while (currentUs < (durationMs * 1000)) {
@@ -99,7 +149,6 @@ object AIScannerHelper {
                     frameBitmap = retriever.getFrameAtTime(currentUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                     if (frameBitmap != null) {
                         val isExplicit = isBitmapSensitive(frameBitmap)
-                        // Immediate RAM clearance to prevent OutOfMemory crash
                         frameBitmap.recycle()
                         if (isExplicit) return true
                     }
