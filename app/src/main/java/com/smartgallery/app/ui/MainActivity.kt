@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         albumsAdapter = AlbumsAdapter(albumList) { album ->
-            // Album click
+            // Album click action
         }
 
         recyclerView?.adapter = mainAdapter
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             tabPhotos.setTextColor(Color.WHITE)
             tabAlbums?.setBackgroundColor(Color.TRANSPARENT)
             tabAlbums?.setTextColor(Color.parseColor("#8E8E93"))
-            
+
             tvMoreHeader?.visibility = View.GONE
             cardMoreSection?.visibility = View.GONE
 
@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             tabAlbums.setTextColor(Color.WHITE)
             tabPhotos?.setBackgroundColor(Color.TRANSPARENT)
             tabPhotos?.setTextColor(Color.parseColor("#8E8E93"))
-            
+
             tvMoreHeader?.visibility = View.VISIBLE
             cardMoreSection?.visibility = View.VISIBLE
 
@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity() {
         albumList.clear()
         val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
 
-        // Querying Internal and External Filesystem Store
+        // Querying Internal and External Media Store
         val uri = MediaStore.Files.getContentUri("external")
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
@@ -134,7 +134,6 @@ class MainActivity : AppCompatActivity() {
             MediaStore.MediaColumns.MEDIA_TYPE
         )
 
-        // Query Photos & Videos
         val selection = "${MediaStore.MediaColumns.MEDIA_TYPE}=? OR ${MediaStore.MediaColumns.MEDIA_TYPE}=?"
         val selectionArgs = arrayOf(
             MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
@@ -151,13 +150,11 @@ class MainActivity : AppCompatActivity() {
 
         cursor?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-            val dataCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA)
             val dateCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
             val bucketCol = c.getColumnIndexOrThrow(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
 
             while (c.moveToNext()) {
                 val id = c.getLong(idCol)
-                val path = c.getString(dataCol) ?: ""
                 val dateAdded = c.getLong(dateCol)
                 val bucket = c.getString(bucketCol) ?: "Camera"
 
@@ -187,7 +184,8 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == STORAGE_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
             loadMediaFiles()
         } else {
-            Toast.makeText(this, "All media permissions required to show gallery items!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permission granted! Loading gallery...", Toast.LENGTH_SHORT).show()
+            loadMediaFiles()
         }
     }
 }
