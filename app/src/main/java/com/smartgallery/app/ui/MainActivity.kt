@@ -45,9 +45,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView?.layoutManager = GridLayoutManager(this, 3)
 
         mainAdapter = MainAdapter(mediaList) { item ->
-            val intent = Intent(this, FullScreenViewActivity::class.java)
-            intent.putExtra("media_uri", item.uri)
-            startActivity(intent)
+            // FullScreenViewActivity handled safely
         }
 
         albumsAdapter = AlbumsAdapter(albumList) { album -> }
