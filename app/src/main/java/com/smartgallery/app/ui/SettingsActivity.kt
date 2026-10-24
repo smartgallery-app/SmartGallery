@@ -1,7 +1,7 @@
 package com.smartgallery.app.ui
 
 import android.os.Bundle
-import android.widget.ImageButton
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.smartgallery.app.R
 
@@ -11,7 +11,10 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         try {
             setContentView(R.layout.activity_settings)
-            val btnBack = findViewById<ImageButton>(R.id.btnBackSettings) ?: findViewById(R.id.btnBack)
+            
+            val btnBack = findViewById<View>(R.id.btnBackSettings) 
+                ?: findViewById<View>(R.id.btnBack)
+                
             btnBack?.setOnClickListener { finish() }
         } catch (e: Exception) {
             e.printStackTrace()
