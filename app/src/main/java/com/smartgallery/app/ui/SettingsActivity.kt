@@ -12,6 +12,7 @@ class SettingsActivity : AppCompatActivity() {
         try {
             setContentView(R.layout.activity_settings)
             
+            // Layout safe lookup to prevent unresolved reference build errors
             val btnBack = findViewById<View>(R.id.btnBackSettings) 
                 ?: findViewById<View>(R.id.btnBack)
                 
