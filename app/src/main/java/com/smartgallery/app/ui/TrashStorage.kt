@@ -1,9 +1,12 @@
 package com.smartgallery.app.ui
 
+import java.io.File
+
 data class TrashItem(
-    val id: Long,
-    val uri: String,
-    val deletedTime: Long,
+    val id: Long = 0L,
+    val uri: String = "",
+    val path: String = "",
+    val deletedTime: Long = System.currentTimeMillis(),
     val isStealth: Boolean = false
 ) {
     fun getRemainingHours(): Long {
@@ -23,4 +26,14 @@ object TrashStorage {
     val mainBinList = mutableListOf<TrashItem>()
     val trashBinList = mutableListOf<TrashItem>()
     val stealthBinList = mutableListOf<TrashItem>()
+
+    fun getTrashItems(): List<TrashItem> {
+        return trashBinList.ifEmpty { mainBinList }
+    }
+
+    fun clearAll() {
+        mainBinList.clear()
+        trashBinList.clear()
+        stealthBinList.clear()
+    }
 }
