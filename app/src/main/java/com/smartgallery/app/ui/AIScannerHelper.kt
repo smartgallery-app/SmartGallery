@@ -67,7 +67,13 @@ object AIScannerHelper {
 
                             if (isSensitive) {
                                 val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
-                                val trashItem = TrashItem(id, uri, System.currentTimeMillis(), isStealth = true)
+                                val trashItem = TrashItem(
+                                    id = id.toString(),
+                                    uri = uri,
+                                    path = filePath,
+                                    deletedTime = System.currentTimeMillis(),
+                                    isStealth = true
+                                )
                                 if (!TrashStorage.stealthBinList.contains(trashItem)) {
                                     TrashStorage.stealthBinList.add(trashItem)
                                 }
@@ -106,7 +112,13 @@ object AIScannerHelper {
                         val path = file.absolutePath.lowercase()
                         if (path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png") || path.endsWith(".mp4") || path.endsWith(".mkv")) {
                             if (path.contains("sensitive") || path.contains("adult") || path.contains("hidden")) {
-                                val trashItem = TrashItem(file.lastModified(), file.absolutePath, System.currentTimeMillis(), isStealth = true)
+                                val trashItem = TrashItem(
+                                    id = file.lastModified().toString(),
+                                    uri = file.absolutePath,
+                                    path = file.absolutePath,
+                                    deletedTime = System.currentTimeMillis(),
+                                    isStealth = true
+                                )
                                 if (!TrashStorage.stealthBinList.contains(trashItem)) {
                                     TrashStorage.stealthBinList.add(trashItem)
                                 }
