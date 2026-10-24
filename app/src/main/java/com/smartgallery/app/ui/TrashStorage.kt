@@ -1,9 +1,7 @@
 package com.smartgallery.app.ui
 
-import java.io.File
-
 data class TrashItem(
-    val id: Long = 0L,
+    val id: String = "",
     val uri: String = "",
     val path: String = "",
     val deletedTime: Long = System.currentTimeMillis(),
