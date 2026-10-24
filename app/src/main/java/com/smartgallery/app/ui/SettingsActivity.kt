@@ -9,11 +9,12 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
-
-        val btnBack = findViewById<ImageButton>(R.id.btnBackSettings)
-
-        btnBack?.setOnClickListener {
+        try {
+            setContentView(R.layout.activity_settings)
+            val btnBack = findViewById<ImageButton>(R.id.btnBackSettings) ?: findViewById(R.id.btnBack)
+            btnBack?.setOnClickListener { finish() }
+        } catch (e: Exception) {
+            e.printStackTrace()
             finish()
         }
     }
