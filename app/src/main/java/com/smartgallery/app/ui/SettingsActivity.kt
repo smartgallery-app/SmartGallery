@@ -12,11 +12,11 @@ class SettingsActivity : AppCompatActivity() {
         try {
             setContentView(R.layout.activity_settings)
             
-            // Layout safe lookup to prevent unresolved reference build errors
-            val btnBack = findViewById<View>(R.id.btnBackSettings) 
-                ?: findViewById<View>(R.id.btnBack)
-                
-            btnBack?.setOnClickListener { finish() }
+            // Safely look for standard back button without referencing missing IDs
+            val btnBack = findViewById<View>(R.id.btnBack)
+            btnBack?.setOnClickListener { 
+                finish() 
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             finish()
