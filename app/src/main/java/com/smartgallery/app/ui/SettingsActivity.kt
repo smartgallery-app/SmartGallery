@@ -12,11 +12,19 @@ class SettingsActivity : AppCompatActivity() {
         try {
             setContentView(R.layout.activity_settings)
             
-            // Safely look for standard back button without referencing missing IDs
-            val btnBack = findViewById<View>(R.id.btnBack)
+            // Back button binding matching XML id: btnSettingsBack
+            val btnBack = findViewById<View>(R.id.btnSettingsBack) 
+                ?: findViewById<View>(R.id.btnBack)
             btnBack?.setOnClickListener { 
                 finish() 
             }
+
+            // Stealth Recovery Box click listener matching XML id: btnOpenStealthBox
+            val btnStealthBox = findViewById<View>(R.id.btnOpenStealthBox)
+            btnStealthBox?.setOnClickListener {
+                // Yahan aap Stealth Bin / Trash Activity open karne ka intent laga sakte hain
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
             finish()
