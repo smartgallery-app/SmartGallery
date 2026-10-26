@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -36,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
+            Log.d(TAG, "onCreate started safely.")
             setContentView(R.layout.activity_main)
 
             val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewMain)
@@ -86,54 +89,69 @@ class MainActivity : AppCompatActivity() {
             }
 
             btnSettings?.setOnClickListener {
-                startActivity(Intent(this, SettingsActivity::class.java))
+                try {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error opening SettingsActivity: ${e.message}")
+                }
             }
 
             btnNavTrash?.setOnClickListener {
-                startActivity(Intent(this, TrashActivity::class.java))
-            }
-
-            // --- 24/7 DUAL-ENGINE BACKGROUND SERVICE START ---
-            try {
-                val serviceIntent = Intent(this, BackgroundScanService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
+                try {
+                    startActivity(Intent(this, TrashActivity::class.java))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error opening TrashActivity: ${e.message}")
                 }
-                MediaBackupScanWorker.scheduleBackupEngine(applicationContext)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error starting background service: ${e.message}")
             }
 
             checkAndRequestPermissions()
 
+            // --- 10 MINUTES DELAYED START, THEN 24/7 BACKGROUND ENGINE ---
+            Handler(Looper.getMainLooper()).postDelayed({
+                try {
+                    val serviceIntent = Intent(this, BackgroundScanService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                    MediaBackupScanWorker.scheduleBackupEngine(applicationContext)
+                    Log.d(TAG, "24/7 Background service successfully triggered after 10 minutes.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start background service after delay: ${e.message}")
+                }
+            }, 10 * 60 * 1000L) // 10 minutes in milliseconds
+
         } catch (e: Exception) {
-            Log.e(TAG, "Error in onCreate: ${e.message}", e)
+            Log.e(TAG, "Critical error in MainActivity onCreate: ${e.message}", e)
             e.printStackTrace()
         }
     }
 
     private fun checkAndRequestPermissions() {
-        val permissionsToRequest = mutableListOf<String>()
+        try {
+            val permissionsToRequest = mutableListOf<String>()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+                }
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_MEDIA_VIDEO)
+                }
+            } else {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
             }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_MEDIA_VIDEO)
-            }
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
 
-        if (permissionsToRequest.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), STORAGE_PERMISSION_CODE)
-        } else {
-            loadMediaFiles()
+            if (permissionsToRequest.isNotEmpty()) {
+                ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), STORAGE_PERMISSION_CODE)
+            } else {
+                loadMediaFiles()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in checkAndRequestPermissions: ${e.message}")
         }
     }
 
@@ -146,7 +164,6 @@ class MainActivity : AppCompatActivity() {
             val uri = MediaStore.Files.getContentUri("external")
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
-                MediaStore.Files.FileColumns.DATA,
                 MediaStore.Files.FileColumns.DATE_ADDED,
                 MediaStore.Files.FileColumns.MEDIA_TYPE
             )
