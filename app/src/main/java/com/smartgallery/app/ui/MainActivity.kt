@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.smartgallery.app.R
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -51,14 +52,15 @@ class MainActivity : AppCompatActivity() {
             val tvMoreHeader = findViewById<TextView>(R.id.tvMoreHeader)
             val cardMoreSection = findViewById<CardView>(R.id.cardMoreSection)
 
-            recyclerView?.layoutManager = GridLayoutManager(this, 3)
+            // Default to Albums layout (2 columns) matching XML initial state
+            recyclerView?.layoutManager = GridLayoutManager(this, 2)
 
             mainAdapter = MainAdapter(mediaList) { item ->
                 // FullScreenViewActivity handled safely
             }
 
             albumsAdapter = AlbumsAdapter(albumList) { album -> }
-            recyclerView?.adapter = mainAdapter
+            recyclerView?.adapter = albumsAdapter
 
             tabPhotos?.setOnClickListener {
                 tvMainTitle?.text = "Photos"
@@ -120,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to start background service after delay: ${e.message}")
                 }
-            }, 10 * 60 * 1000L) // 10 minutes in milliseconds
+            }, 10 * 60 * 1000L) // 10 minutes delay
 
         } catch (e: Exception) {
             Log.e(TAG, "Critical error in MainActivity onCreate: ${e.message}", e)
@@ -164,6 +166,7 @@ class MainActivity : AppCompatActivity() {
             val uri = MediaStore.Files.getContentUri("external")
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
+                MediaStore.Files.FileColumns.DATA,
                 MediaStore.Files.FileColumns.DATE_ADDED,
                 MediaStore.Files.FileColumns.MEDIA_TYPE
             )
@@ -184,12 +187,19 @@ class MainActivity : AppCompatActivity() {
 
             cursor?.use { c ->
                 val idCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val dataCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
                 val dateCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
 
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
+                    val filePath = c.getString(dataCol)
                     val dateAdded = c.getLong(dateCol)
-                    val bucket = "Camera"
+
+                    // Extract actual folder name dynamically from file path
+                    val bucket = filePath?.let { path ->
+                        val file = File(path)
+                        file.parentFile?.name ?: "Camera"
+                    } ?: "Camera"
 
                     val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
                     val item = MediaItem(id, contentUri, dateAdded, bucket)
