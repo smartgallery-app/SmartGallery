@@ -1,5 +1,6 @@
 package com.smartgallery.app.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -22,7 +23,8 @@ class SettingsActivity : AppCompatActivity() {
             // Stealth Recovery Box click listener matching XML id: btnOpenStealthBox
             val btnStealthBox = findViewById<View>(R.id.btnOpenStealthBox)
             btnStealthBox?.setOnClickListener {
-                // Yahan aap Stealth Bin / Trash Activity open karne ka intent laga sakte hain
+                val intent = Intent(this, TrashActivity::class.java)
+                startActivity(intent)
             }
 
         } catch (e: Exception) {
