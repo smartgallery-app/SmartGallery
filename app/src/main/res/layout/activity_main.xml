@@ -5,19 +5,20 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Top Bar -->
+    <!-- Top Header Bar -->
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:paddingHorizontal="20dp">
+        android:paddingHorizontal="20dp"
+        android:background="#000000">
 
         <TextView
             android:id="@+id/tvMainTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:text="Albums"
+            android:text="Photos"
             android:textColor="#FFFFFF"
             android:textSize="26sp"
             android:textStyle="bold" />
@@ -35,7 +36,8 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_search"
-                app:tint="#FFFFFF" />
+                app:tint="#FFFFFF"
+                android:contentDescription="Search" />
 
             <ImageButton
                 android:id="@+id/btnSettings"
@@ -44,98 +46,239 @@
                 android:layout_marginStart="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@android:drawable/ic_menu_manage"
-                app:tint="#FFFFFF" />
+                app:tint="#FFFFFF"
+                android:contentDescription="Settings" />
         </LinearLayout>
     </RelativeLayout>
 
-    <!-- Scrollable Content View -->
-    <ScrollView
+    <!-- Main Content Container -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/floatingPillNav"
-        android:layout_below="@id/topBar">
+        android:layout_below="@id/topBar"
+        android:layout_above="@id/floatingPillNav">
 
-        <LinearLayout
+        <!-- Photos View (Grid) -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewPhotos"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:padding="4dp"
+            android:visibility="visible" />
 
-            <!-- Main Media / Albums Grid -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewMain"
+        <!-- Albums & Categories Scrollable View -->
+        <ScrollView
+            android:id="@+id/scrollViewAlbums"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:visibility="gone">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <!-- Realme UI "More" Section -->
-            <TextView
-                android:id="@+id/tvMoreHeader"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="More"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="12dp"
-                android:layout_marginStart="8dp" />
+                <!-- Dynamic Folders RecyclerView (Camera, Downloads, etc.) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewAlbumsGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardMoreSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardBackgroundColor="#1C1C1E"
-                app:cardCornerRadius="20dp">
+                <!-- Featured Section (People, Smart categories, Memories) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Featured"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp">
+                    android:orientation="horizontal"
+                    android:weightSum="3">
 
-                    <!-- 30-Day Main Trash Option -->
-                    <RelativeLayout
-                        android:id="@+id/btnNavTrash"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingVertical="16dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:id="@+id/icTrash"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@android:drawable/ic_menu_delete"
-                            app:tint="#8E8E93" />
-
+                    <CardView
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        app:cardBackgroundColor="#1C1C1E"
+                        app:cardCornerRadius="16dp">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_toEndOf="@id/icTrash"
-                            android:layout_centerVertical="true"
-                            android:layout_marginStart="16dp"
-                            android:text="Recently deleted"
+                            android:text="People"
                             android:textColor="#FFFFFF"
-                            android:textSize="16sp" />
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="8dp"
+                            android:textSize="12sp" />
+                    </CardView>
 
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:src="@android:drawable/ic_media_play"
-                            app:tint="#8E8E93" />
-                    </RelativeLayout>
+                    <CardView
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="3dp"
+                        app:cardBackgroundColor="#1C1C1E"
+                        app:cardCornerRadius="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Smart categories"
+                            android:textColor="#FFFFFF"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="8dp"
+                            android:textSize="11sp" />
+                    </CardView>
 
+                    <CardView
+                        android:layout_width="0dp"
+                        android:layout_height="100dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        app:cardBackgroundColor="#1C1C1E"
+                        app:cardCornerRadius="16dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Memories"
+                            android:textColor="#FFFFFF"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:layout_marginBottom="8dp"
+                            android:textSize="12sp" />
+                    </CardView>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
 
-        </LinearLayout>
-    </ScrollView>
+                <!-- Media Types Section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Media types"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
 
-    <!-- Floating Pill Navigation -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Motion Photo        17 >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Portrait                 10 >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="RAW                       1 >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Bursts                    2 >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- More Section (Trash, Private, etc.) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="More"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginBottom="12dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="30dp"
+                    app:cardBackgroundColor="#1C1C1E"
+                    app:cardCornerRadius="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Private                  >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Cleanup suggestions >"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingVertical="14dp" />
+
+                        <RelativeLayout
+                            android:id="@+id/btnNavTrash"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingVertical="14dp"
+                            android:background="?attr/selectableItemBackground">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Recently deleted"
+                                android:textColor="#FFFFFF"
+                                android:textSize="16sp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:text="48 >"
+                                android:textColor="#8E8E93"
+                                android:textSize="16sp" />
+                        </RelativeLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+
+    <!-- Floating Pill Navigation Bar -->
     <LinearLayout
         android:id="@+id/floatingPillNav"
         android:layout_width="wrap_content"
@@ -143,7 +286,6 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="24dp"
-        android:background="@android:color/transparent"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -165,10 +307,11 @@
                     android:id="@+id/tabPhotos"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp"
+                    android:background="#3A3A3C"
                     android:gravity="center"
                     android:paddingHorizontal="20dp"
                     android:text="Photos"
-                    android:textColor="#8E8E93"
+                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -176,18 +319,18 @@
                     android:id="@+id/tabAlbums"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp"
-                    android:background="#3A3A3C"
                     android:gravity="center"
                     android:paddingHorizontal="20dp"
                     android:text="Albums"
-                    android:textColor="#FFFFFF"
+                    android:textColor="#8E8E93"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+        <!-- Filter / Action Button next to pill -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/btnNavPlus"
+            android:id="@+id/btnNavFilter"
             android:layout_width="54dp"
             android:layout_height="54dp"
             android:layout_marginStart="12dp"
@@ -196,11 +339,12 @@
             app:cardElevation="8dp">
 
             <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
                 android:layout_gravity="center"
-                android:src="@android:drawable/ic_input_add"
-                app:tint="#FFFFFF" />
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="#FFFFFF"
+                android:contentDescription="Filter Options" />
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 
