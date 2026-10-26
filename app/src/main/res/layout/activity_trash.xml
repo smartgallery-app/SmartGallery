@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="#000000">
 
-    <!-- Clean Realme UI Header -->
+    <!-- Top Header -->
     <RelativeLayout
-        android:id="@+id/topBarTrash"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:paddingHorizontal="16dp">
+        android:paddingHorizontal="16dp"
+        android:layout_marginTop="8dp">
 
         <ImageButton
             android:id="@+id/btnTrashBack"
@@ -22,32 +23,50 @@
             app:tint="#FFFFFF" />
 
         <TextView
-            android:id="@+id/tvTrashTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:layout_toEndOf="@id/btnTrashBack"
             android:layout_marginStart="16dp"
-            android:text="Recently deleted"
+            android:text="Stealth Recovery Box"
             android:textColor="#FFFFFF"
-            android:textSize="20sp" />
-
-        <ImageButton
-            android:id="@+id/btnTrashMenu"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_more"
-            app:tint="#FFFFFF" />
+            android:textSize="20sp"
+            android:textStyle="bold" />
     </RelativeLayout>
 
+    <!-- Info Banner for 12-Hour Auto-Purge -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1C1C1E"
+        android:padding="16dp"
+        android:layout_margin="16dp"
+        android:orientation="vertical"
+        app:cardCornerRadius="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto-Cleanup Active"
+            android:textColor="#FF9F0A"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Items in this stealth box are automatically permanently deleted after 12 hours of detection."
+            android:textColor="#8E8E93"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- RecyclerView for Deleted/Stealth Items -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewTrash"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/topBarTrash"
-        android:padding="2dp" />
+        android:paddingHorizontal="16dp"
+        android:clipToPadding="false" />
 
-</RelativeLayout>
+</LinearLayout>
