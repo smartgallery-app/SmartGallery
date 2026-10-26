@@ -13,10 +13,11 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.RelativeLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -42,20 +43,21 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "onCreate started safely.")
             setContentView(R.layout.activity_main)
 
-            val recyclerView = findViewById<RecyclerView>(R.id.recyclerViewMain)
+            val recyclerViewPhotos = findViewById<RecyclerView>(R.id.recyclerViewPhotos)
+            val scrollViewAlbums = findViewById<ScrollView>(R.id.scrollViewAlbums)
+            val recyclerViewAlbumsGrid = findViewById<RecyclerView>(R.id.recyclerViewAlbumsGrid)
+
             val tabPhotos = findViewById<TextView>(R.id.tabPhotos)
             val tabAlbums = findViewById<TextView>(R.id.tabAlbums)
             val btnSettings = findViewById<ImageButton>(R.id.btnSettings)
             val tvMainTitle = findViewById<TextView>(R.id.tvMainTitle)
-
+            val btnNavFilter = findViewById<androidx.cardview.widget.CardView>(R.id.btnNavFilter)
             val btnNavTrash = findViewById<RelativeLayout>(R.id.btnNavTrash)
-            val tvMoreHeader = findViewById<TextView>(R.id.tvMoreHeader)
-            val cardMoreSection = findViewById<CardView>(R.id.cardMoreSection)
 
-            // Default to Albums layout (2 columns) matching XML initial state
-            recyclerView?.layoutManager = GridLayoutManager(this, 2)
+            recyclerViewPhotos?.layoutManager = GridLayoutManager(this, 3)
+            recyclerViewAlbumsGrid?.layoutManager = GridLayoutManager(this, 2)
 
-            // Photo click karne par FullScreen view khulega
+            // Photo click listener
             mainAdapter = MainAdapter(mediaList) { item ->
                 try {
                     val intent = Intent(this, FullScreenViewActivity::class.java).apply {
@@ -67,7 +69,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // Album folder par click karne par uske andar ki media khulegi
+            // Album folder click listener
             albumsAdapter = AlbumsAdapter(albumList) { album ->
                 try {
                     val intent = Intent(this, AlbumDetailActivity::class.java).apply {
@@ -79,8 +81,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            recyclerView?.adapter = albumsAdapter
+            recyclerViewPhotos?.adapter = mainAdapter
+            recyclerViewAlbumsGrid?.adapter = albumsAdapter
 
+            // Tab Switching Logic
             tabPhotos?.setOnClickListener {
                 tvMainTitle?.text = "Photos"
                 tabPhotos.setBackgroundColor(Color.parseColor("#3A3A3C"))
@@ -88,11 +92,8 @@ class MainActivity : AppCompatActivity() {
                 tabAlbums?.setBackgroundColor(Color.TRANSPARENT)
                 tabAlbums?.setTextColor(Color.parseColor("#8E8E93"))
 
-                tvMoreHeader?.visibility = View.GONE
-                cardMoreSection?.visibility = View.GONE
-
-                recyclerView?.layoutManager = GridLayoutManager(this, 3)
-                recyclerView?.adapter = mainAdapter
+                recyclerViewPhotos?.visibility = View.VISIBLE
+                scrollViewAlbums?.visibility = View.GONE
             }
 
             tabAlbums?.setOnClickListener {
@@ -102,11 +103,27 @@ class MainActivity : AppCompatActivity() {
                 tabPhotos?.setBackgroundColor(Color.TRANSPARENT)
                 tabPhotos?.setTextColor(Color.parseColor("#8E8E93"))
 
-                tvMoreHeader?.visibility = View.VISIBLE
-                cardMoreSection?.visibility = View.VISIBLE
+                recyclerViewPhotos?.visibility = View.GONE
+                scrollViewAlbums?.visibility = View.VISIBLE
+            }
 
-                recyclerView?.layoutManager = GridLayoutManager(this, 2)
-                recyclerView?.adapter = albumsAdapter
+            // Filter Popup Menu (Realme style popup when clicking filter button)
+            btnNavFilter?.setOnClickListener { view ->
+                val popup = PopupMenu(this, view)
+                popup.menu.add(0, 1, 0, "All")
+                popup.menu.add(0, 2, 1, "Photo")
+                popup.menu.add(0, 3, 2, "Videos")
+                popup.menu.add(0, 4, 3, "Motion Photo")
+                popup.menu.add(0, 5, 4, "Screenshots & screen recordings")
+                popup.menu.add(0, 6, 5, "Favourites")
+                popup.menu.add(0, 7, 6, "Edited")
+                popup.menu.add(0, 8, 7, "Hide customised albums")
+
+                popup.setOnMenuItemClickListener { item ->
+                    // Handle filter selection here if needed
+                    true
+                }
+                popup.show()
             }
 
             btnSettings?.setOnClickListener {
@@ -141,7 +158,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to start background service after delay: ${e.message}")
                 }
-            }, 10 * 60 * 1000L) // 10 minutes delay
+            }, 10 * 60 * 1000L)
 
         } catch (e: Exception) {
             Log.e(TAG, "Critical error in MainActivity onCreate: ${e.message}", e)
