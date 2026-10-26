@@ -34,7 +34,11 @@ class MainAdapter(
             holder.videoBadge.visibility = View.GONE
         }
 
-        Glide.with(holder.itemView.context)
+        // CRITICAL FIX: Clear previous Glide load to prevent recycled view mixing/glitches
+        Glide.with(holder.imageView.context).clear(holder.imageView)
+
+        // Load the unique URI for each item properly
+        Glide.with(holder.imageView.context)
             .load(item.uri)
             .centerCrop()
             .into(holder.imageView)
