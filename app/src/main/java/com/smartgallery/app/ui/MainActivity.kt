@@ -55,11 +55,30 @@ class MainActivity : AppCompatActivity() {
             // Default to Albums layout (2 columns) matching XML initial state
             recyclerView?.layoutManager = GridLayoutManager(this, 2)
 
+            // Photo click karne par FullScreen view khulega
             mainAdapter = MainAdapter(mediaList) { item ->
-                // FullScreenViewActivity handled safely
+                try {
+                    val intent = Intent(this, FullScreenViewActivity::class.java).apply {
+                        putExtra("media_uri", item.uri)
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error opening FullScreenViewActivity: ${e.message}")
+                }
             }
 
-            albumsAdapter = AlbumsAdapter(albumList) { album -> }
+            // Album folder par click karne par uske andar ki media khulegi
+            albumsAdapter = AlbumsAdapter(albumList) { album ->
+                try {
+                    val intent = Intent(this, AlbumDetailActivity::class.java).apply {
+                        putExtra("album_name", album.name)
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error opening AlbumDetailActivity: ${e.message}")
+                }
+            }
+
             recyclerView?.adapter = albumsAdapter
 
             tabPhotos?.setOnClickListener {
@@ -188,20 +207,26 @@ class MainActivity : AppCompatActivity() {
             cursor?.use { c ->
                 val idCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val dataCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
+                val typeCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
                 val dateCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
 
                 while (c.moveToNext()) {
                     val id = c.getLong(idCol)
                     val filePath = c.getString(dataCol)
+                    val mediaType = c.getInt(typeCol)
                     val dateAdded = c.getLong(dateCol)
 
-                    // Extract actual folder name dynamically from file path
+                    val contentUri = if (mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                        Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id.toString())
+                    } else {
+                        Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
+                    }.toString()
+
                     val bucket = filePath?.let { path ->
                         val file = File(path)
                         file.parentFile?.name ?: "Camera"
                     } ?: "Camera"
 
-                    val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
                     val item = MediaItem(id, contentUri, dateAdded, bucket)
                     mediaList.add(item)
 
