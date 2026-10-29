@@ -2,9 +2,11 @@ package com.smartgallery.app.ui
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.smartgallery.app.R
 
@@ -15,7 +17,7 @@ class FullScreenViewActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_full_screen) // Aapka wala XML layout
+        setContentView(R.layout.activity_full_screen)
 
         viewPager = findViewById(R.id.viewPager)
         infoTextView = findViewById(R.id.infoTextView)
@@ -28,21 +30,12 @@ class FullScreenViewActivity : AppCompatActivity() {
 
         val mediaUri = intent.getStringExtra("media_uri")
 
-        // Agar aap chahein toh yahan buttons ke click listeners laga sakte hain
-        btnShare?.setOnClickListener {
-            // Share logic
-        }
-
-        btnFavorite?.setOnClickListener {
-            // Favorite logic
-        }
-
-        btnEdit?.setOnClickListener {
-            // Edit logic
-        }
-
-        btnDelete?.setOnClickListener {
-            // Delete logic
+        // Load single image into ViewPager using a simple adapter or direct loading view
+        if (!mediaUri.isNullOrEmpty()) {
+            val adapter = FullScreenAdapter(listOf(mediaUri)) {
+                // Click to finish or toggle UI bars if needed
+            }
+            viewPager.adapter = adapter
         }
 
         btnInfo?.setOnClickListener {
@@ -54,4 +47,34 @@ class FullScreenViewActivity : AppCompatActivity() {
             }
         }
     }
+}
+
+// Simple internal adapter for FullScreen ViewPager2
+class FullScreenAdapter(
+    private val uriList: List<String>,
+    private val onClick: () -> Unit
+) : androidx.recyclerview.widget.RecyclerView.Adapter<FullScreenAdapter.ViewHolder>() {
+
+    class ViewHolder(view: View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view) {
+        val imageView: ImageView = view.findViewById(R.id.imageViewFullScreenItem)
+    }
+
+    override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
+        val view = android.view.LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_fullscreen_image, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val uri = uriList[position]
+        Glide.with(holder.imageView.context)
+            .load(uri)
+            .into(holder.imageView)
+
+        holder.imageView.setOnClickListener {
+            onClick()
+        }
+    }
+
+    override fun getItemCount(): Int = uriList.size
 }
