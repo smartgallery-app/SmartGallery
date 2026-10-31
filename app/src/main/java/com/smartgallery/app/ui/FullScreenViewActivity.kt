@@ -20,7 +20,7 @@ class FullScreenViewActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_full_screen) // Aapka wala exact XML layout
+        setContentView(R.layout.activity_full_screen)
 
         viewPager = findViewById(R.id.viewPager)
         infoTextView = findViewById(R.id.infoTextView)
@@ -33,29 +33,16 @@ class FullScreenViewActivity : AppCompatActivity() {
 
         val mediaUri = intent.getStringExtra("media_uri") ?: ""
 
-        // ViewPager2 ke liye list set kar rahe hain taaki swiping bhi chale aur error bhi na aaye
         val mediaList = listOf(mediaUri)
         val adapter = FullScreenPagerAdapter(mediaList) {
-            // Tap karne par action handle kar sakte hain
+            // Click action
         }
         viewPager.adapter = adapter
 
-        // Action Buttons Click Listeners (Features safe hain)
-        btnShare?.setOnClickListener {
-            // Share logic
-        }
-
-        btnFavorite?.setOnClickListener {
-            // Favorite logic
-        }
-
-        btnEdit?.setOnClickListener {
-            // Edit logic
-        }
-
-        btnDelete?.setOnClickListener {
-            // Delete logic
-        }
+        btnShare?.setOnClickListener { }
+        btnFavorite?.setOnClickListener { }
+        btnEdit?.setOnClickListener { }
+        btnDelete?.setOnClickListener { }
 
         btnInfo?.setOnClickListener {
             if (infoTextView != null) {
@@ -70,7 +57,7 @@ class FullScreenViewActivity : AppCompatActivity() {
     }
 }
 
-// FullScreen ViewPager Adapter
+// Inner Adapter to prevent any redeclaration or duplicate file conflicts
 class FullScreenPagerAdapter(
     private val uriList: List<String>,
     private val onClick: () -> Unit
