@@ -57,7 +57,6 @@ class FullScreenViewActivity : AppCompatActivity() {
     }
 }
 
-// Inner Adapter to prevent any redeclaration or duplicate file conflicts
 class FullScreenPagerAdapter(
     private val uriList: List<String>,
     private val onClick: () -> Unit
