@@ -7,8 +7,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -17,7 +15,6 @@ import android.widget.PopupMenu
 import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -41,8 +38,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
-            Log.d(TAG, "onCreate started safely.")
             setContentView(R.layout.activity_main)
+            Log.d(TAG, "onCreate started safely.")
 
             val recyclerViewPhotos = findViewById<RecyclerView>(R.id.recyclerViewPhotos)
             val scrollViewAlbums = findViewById<ScrollView>(R.id.scrollViewAlbums)
@@ -180,114 +177,117 @@ class MainActivity : AppCompatActivity() {
             if (permissionsToRequest.isNotEmpty()) {
                 ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), STORAGE_PERMISSION_CODE)
             } else {
-                loadMediaFiles()
+                loadMediaFilesAsync()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error in checkAndRequestPermissions: ${e.message}")
-            loadMediaFiles() // Fallback to load even if permission check throws
+            loadMediaFilesAsync()
         }
     }
 
-    private fun loadMediaFiles() {
-        try {
-            mediaList.clear()
-            albumList.clear()
-            val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
+    // ⚡ Background Thread se media load hoga taaki UI freeze / black screen na ho
+    private fun loadMediaFilesAsync() {
+        Thread {
+            try {
+                mediaList.clear()
+                albumList.clear()
+                val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
 
-            // Add permanent 30-day Recovery Box album
-            albumList.add(AlbumItem("Recovery Box", 0, ""))
+                // Add permanent 30-day Recovery Box album
+                albumList.add(AlbumItem("Recovery Box", 0, ""))
 
-            // 1. Load Images safely via Scoped Storage
-            val imageUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            val imageProjection = arrayOf(
-                MediaStore.Images.Media._ID,
-                MediaStore.Images.Media.DATE_ADDED,
-                MediaStore.Images.Media.BUCKET_DISPLAY_NAME
-            )
+                // 1. Load Images safely via Scoped Storage
+                val imageUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                val imageProjection = arrayOf(
+                    MediaStore.Images.Media._ID,
+                    MediaStore.Images.Media.DATE_ADDED,
+                    MediaStore.Images.Media.BUCKET_DISPLAY_NAME
+                )
 
-            contentResolver.query(
-                imageUri,
-                imageProjection,
-                null,
-                null,
-                "${MediaStore.Images.Media.DATE_ADDED} DESC"
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                contentResolver.query(
+                    imageUri,
+                    imageProjection,
+                    null,
+                    null,
+                    "${MediaStore.Images.Media.DATE_ADDED} DESC"
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                    val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+                    val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol)
-                    val dateAdded = cursor.getLong(dateCol)
-                    val bucket = cursor.getString(bucketCol) ?: "Camera"
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(idCol)
+                        val dateAdded = cursor.getLong(dateCol)
+                        val bucket = cursor.getString(bucketCol) ?: "Camera"
 
-                    val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
-                    val item = MediaItem(id, contentUri, dateAdded, bucket)
-                    mediaList.add(item)
+                        val contentUri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
+                        val item = MediaItem(id, contentUri, dateAdded, bucket)
+                        mediaList.add(item)
 
-                    if (!albumMap.containsKey(bucket)) {
-                        albumMap[bucket] = mutableListOf()
+                        if (!albumMap.containsKey(bucket)) {
+                            albumMap[bucket] = mutableListOf()
+                        }
+                        albumMap[bucket]?.add(item)
                     }
-                    albumMap[bucket]?.add(item)
                 }
-            }
 
-            // 2. Load Videos safely via Scoped Storage
-            val videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-            val videoProjection = arrayOf(
-                MediaStore.Video.Media._ID,
-                MediaStore.Video.Media.DATE_ADDED,
-                MediaStore.Video.Media.BUCKET_DISPLAY_NAME
-            )
+                // 2. Load Videos safely via Scoped Storage
+                val videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                val videoProjection = arrayOf(
+                    MediaStore.Video.Media._ID,
+                    MediaStore.Video.Media.DATE_ADDED,
+                    MediaStore.Video.Media.BUCKET_DISPLAY_NAME
+                )
 
-            contentResolver.query(
-                videoUri,
-                videoProjection,
-                null,
-                null,
-                "${MediaStore.Video.Media.DATE_ADDED} DESC"
-            )?.use { cursor ->
-                val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-                val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
-                val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
+                contentResolver.query(
+                    videoUri,
+                    videoProjection,
+                    null,
+                    null,
+                    "${MediaStore.Video.Media.DATE_ADDED} DESC"
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+                    val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+                    val bucketCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
 
-                while (cursor.moveToNext()) {
-                    val id = cursor.getLong(idCol)
-                    val dateAdded = cursor.getLong(dateCol)
-                    val bucket = cursor.getString(bucketCol) ?: "Camera"
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(idCol)
+                        val dateAdded = cursor.getLong(dateCol)
+                        val bucket = cursor.getString(bucketCol) ?: "Camera"
 
-                    val contentUri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
-                    val item = MediaItem(id, contentUri, dateAdded, bucket)
-                    mediaList.add(item)
+                        val contentUri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id.toString()).toString()
+                        val item = MediaItem(id, contentUri, dateAdded, bucket)
+                        mediaList.add(item)
 
-                    if (!albumMap.containsKey(bucket)) {
-                        albumMap[bucket] = mutableListOf()
+                        if (!albumMap.containsKey(bucket)) {
+                            albumMap[bucket] = mutableListOf()
+                        }
+                        albumMap[bucket]?.add(item)
                     }
-                    albumMap[bucket]?.add(item)
                 }
-            }
 
-            mediaList.sortByDescending { it.dateAdded }
+                mediaList.sortByDescending { it.dateAdded }
 
-            for ((name, items) in albumMap) {
-                if (items.isNotEmpty()) {
-                    albumList.add(AlbumItem(name, items.size, items[0].uri))
+                for ((name, items) in albumMap) {
+                    if (items.isNotEmpty()) {
+                        albumList.add(AlbumItem(name, items.size, items[0].uri))
+                    }
                 }
-            }
 
-            runOnUiThread {
-                mainAdapter.notifyDataSetChanged()
-                albumsAdapter.notifyDataSetChanged()
+                // UI thread par adapters ko notify karo
+                runOnUiThread {
+                    mainAdapter.notifyDataSetChanged()
+                    albumsAdapter.notifyDataSetChanged()
+                    Log.d(TAG, "Successfully loaded ${mediaList.size} media items on background thread.")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading media files asynchronously: ${e.message}", e)
             }
-            Log.d(TAG, "Successfully loaded ${mediaList.size} media items.")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading media files: ${e.message}", e)
-        }
+        }.start()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Permission allow ho ya deny, app aage badh kar media load karegi taaki black screen na aaye
-        loadMediaFiles()
+        loadMediaFilesAsync()
     }
 }
