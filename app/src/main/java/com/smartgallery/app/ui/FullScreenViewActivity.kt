@@ -34,16 +34,15 @@ class FullScreenViewActivity : AppCompatActivity() {
         val btnDelete = findViewById<MaterialButton>(R.id.btnDelete)
         val btnInfo = findViewById<MaterialButton>(R.id.btnInfo)
 
-        // Intent se media URI fetch kar rahe hain
         val mediaUri = intent.getStringExtra("media_uri") ?: ""
-
         val mediaList = if (mediaUri.isNotEmpty()) listOf(mediaUri) else listOf("")
+        
         val adapter = FullScreenPagerAdapter(mediaList) {
-            // Tap karne par activity finish ya UI toggle kar sakte hain
+            // Tap action if needed
         }
         viewPager.adapter = adapter
 
-        // 1. Share Feature
+        // Share Action
         btnShare?.setOnClickListener {
             if (mediaUri.isNotEmpty()) {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -57,23 +56,23 @@ class FullScreenViewActivity : AppCompatActivity() {
             }
         }
 
-        // 2. Favorite Feature
+        // Favorite Action
         btnFavorite?.setOnClickListener {
             Toast.makeText(this, "Added to Favorites", Toast.LENGTH_SHORT).show()
         }
 
-        // 3. Edit Feature
+        // Edit Action
         btnEdit?.setOnClickListener {
             Toast.makeText(this, "Opening Editor...", Toast.LENGTH_SHORT).show()
         }
 
-        // 4. Delete Feature
+        // Delete Action (Moves to 30-day Recovery Box)
         btnDelete?.setOnClickListener {
             Toast.makeText(this, "Moved to Recovery Box", Toast.LENGTH_SHORT).show()
             finish()
         }
 
-        // 5. Info Overlay Toggle
+        // Info Overlay Toggle
         btnInfo?.setOnClickListener {
             if (infoTextView != null) {
                 if (infoTextView.visibility == View.VISIBLE) {
@@ -87,7 +86,6 @@ class FullScreenViewActivity : AppCompatActivity() {
     }
 }
 
-// Inner ViewPager Adapter for smooth swiping and image loading
 class FullScreenPagerAdapter(
     private val uriList: List<String>,
     private val onClick: () -> Unit
@@ -110,7 +108,6 @@ class FullScreenPagerAdapter(
                 .load(uri)
                 .into(holder.imageView)
         }
-
         holder.imageView.setOnClickListener {
             onClick()
         }
