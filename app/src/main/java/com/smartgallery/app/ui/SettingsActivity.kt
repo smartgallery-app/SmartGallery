@@ -1,35 +1,18 @@
-package com.smartgallery.app.ui
+package com.smart.gallery
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
-import com.smartgallery.app.R
 
 class SettingsActivity : AppCompatActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            setContentView(R.layout.activity_settings)
-            
-            // Back button binding matching XML id: btnSettingsBack
-            val btnBack = findViewById<View>(R.id.btnSettingsBack) 
-                ?: findViewById<View>(R.id.btnBack)
-            btnBack?.setOnClickListener { 
-                finish() 
-            }
+        setContentView(R.layout.activity_settings)
 
-            // Stealth Recovery Box click listener matching XML id: btnOpenStealthBox
-            val btnStealthBox = findViewById<View>(R.id.btnOpenStealthBox)
-            btnStealthBox?.setOnClickListener {
-                val intent = Intent(this, TrashActivity::class.java)
-                startActivity(intent)
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            finish()
+        // Integration of 12-hour quick recovery box status inside settings menu
+        val quickRecoveryOption = findViewById<RelativeLayout>(R.id.layoutQuickRecovery)
+        quickRecoveryOption?.setOnClickListener {
+            // Open 12-hour quick recovery queue details
         }
     }
 }
