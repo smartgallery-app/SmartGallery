@@ -17,6 +17,7 @@ import android.widget.PopupMenu
 import android.widget.RelativeLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -88,7 +89,7 @@ class MainActivity : AppCompatActivity() {
             recyclerViewPhotos?.adapter = mainAdapter
             recyclerViewAlbumsGrid?.adapter = albumsAdapter
 
-            // Tab Switching Logic (Photos vs Albums)
+            // Tab Switching Logic
             tabPhotos?.setOnClickListener {
                 tvMainTitle?.text = "Photos"
                 tabPhotos.setBackgroundColor(Color.parseColor("#3A3A3C"))
@@ -143,27 +144,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // Schedule 12-hour background cleanup queue for auto-delete
-            RecoveryCleanupWorker.scheduleCleanup(applicationContext)
+            // Schedule background cleanup queue
+            try {
+                RecoveryCleanupWorker.scheduleCleanup(applicationContext)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error scheduling worker: ${e.message}")
+            }
 
-            // Check permissions and load media
+            // Check permissions and load media safely
             checkAndRequestPermissions()
-
-            // 10 minutes delayed start for 24/7 background engine
-            Handler(Looper.getMainLooper()).postDelayed({
-                try {
-                    val serviceIntent = Intent(this, BackgroundScanService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
-                    } else {
-                        startService(serviceIntent)
-                    }
-                    MediaBackupScanWorker.scheduleBackupEngine(applicationContext)
-                    Log.d(TAG, "24/7 Background service successfully triggered after 10 minutes.")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to start background service after delay: ${e.message}")
-                }
-            }, 10 * 60 * 1000L)
 
         } catch (e: Exception) {
             Log.e(TAG, "Critical error in MainActivity onCreate: ${e.message}", e)
@@ -195,6 +184,7 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error in checkAndRequestPermissions: ${e.message}")
+            loadMediaFiles() // Fallback to load even if permission check throws
         }
     }
 
@@ -204,7 +194,7 @@ class MainActivity : AppCompatActivity() {
             albumList.clear()
             val albumMap = mutableMapOf<String, MutableList<MediaItem>>()
 
-            // Add permanent 30-day Recovery Box as the first album item
+            // Add permanent 30-day Recovery Box album
             albumList.add(AlbumItem("Recovery Box", 0, ""))
 
             // 1. Load Images safely via Scoped Storage
@@ -285,8 +275,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            mainAdapter.notifyDataSetChanged()
-            albumsAdapter.notifyDataSetChanged()
+            runOnUiThread {
+                mainAdapter.notifyDataSetChanged()
+                albumsAdapter.notifyDataSetChanged()
+            }
             Log.d(TAG, "Successfully loaded ${mediaList.size} media items.")
         } catch (e: Exception) {
             Log.e(TAG, "Error loading media files: ${e.message}", e)
@@ -295,8 +287,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            loadMediaFiles()
-        }
+        // Permission allow ho ya deny, app aage badh kar media load karegi taaki black screen na aaye
+        loadMediaFiles()
     }
 }
