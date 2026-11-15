@@ -1,4 +1,4 @@
-package com.smart.gallery
+package com.smartgallery.app
 
 import android.content.Intent
 import android.os.Bundle
